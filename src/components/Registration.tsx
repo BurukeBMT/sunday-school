@@ -114,12 +114,28 @@ export const Registration: React.FC = () => {
           return;
         }
 
+        // Get max ID once
+        let maxNum = 0;
+        try {
+          const q = query(collection(db, 'students'), orderBy('id', 'desc'), limit(1));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const lastId = snap.docs[0].data().id as string;
+            const match = lastId.match(/\d+$/);
+            if (match) maxNum = parseInt(match[0]);
+          }
+        } catch (e) {
+          console.error('Bulk max ID error:', e);
+        }
+
         let successCount = 0;
         const errors: string[] = [];
 
-        for (const record of records) {
+        for (let index = 0; index < records.length; index++) {
+          const record = records[index];
           try {
-            const studentId = await generateStudentId();
+            maxNum++; // Sequential
+            const studentId = `ፍ-ሃ-ሰ-ት-${maxNum.toString().padStart(5, '0')}`;
             const qrToken = Math.random().toString(36).substring(2, 15);
             const student: Student = {
               id: studentId,
@@ -133,7 +149,7 @@ export const Registration: React.FC = () => {
             await setDoc(doc(db, 'students', studentId), student);
             successCount++;
           } catch (err) {
-            errors.push(`Failed for ${record['Full Name'] || 'Unknown'}`);
+            errors.push(`Row ${index + 1} (${record['Full Name'] || 'Unknown'}): ${err}`);
           }
         }
 
