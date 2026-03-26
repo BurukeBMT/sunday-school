@@ -42,8 +42,7 @@ export const LandingPage: React.FC = () => {
   const services = [
     { id: 0, title: 'የቅዱስ ቂርቆስ ክፍል', age: '3-9 ዓመት' },
     { id: 1, title: 'የሕፃናት ክፍል', age: '10-13 ዓመት' },
-    { id: 2, title: 'የአፃዴ ክፍል', age: '14-16 ዓመት' },
-    { id: 3, title: 'የመካከለኛ ክፍል', age: '17-19 ዓመት' },
+    { id: 2, title: 'የአዳጊ ክፍል', age: '14-18 ዓመት' },
     { id: 4, title: 'የወጣቶች ክፍል', age: '19 ዓመት በላይ' },
     { id: 5, title: 'የአረጋውያን ጉባኤ', age: 'ለአባቶችና እናቶች' },
   ];
@@ -93,7 +92,7 @@ export const LandingPage: React.FC = () => {
             <span className="text-[#5A5A40]">ሰንበት ትምህርት ቤት</span>
           </h1>
           <p className="text-xl text-gray-600 mb-6 leading-relaxed max-w-xl">
-            የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተክርስቲያን፣ የምሥራቅ ሐረርጌ ሀገረ ስብከት፣ የጥንተ አድባራት ወገዳማት ደብረ ፀሐይ ቅዱስ ጊዮርጊስ እና ደብረ አድህኖ ቅዱስ ገብርኤል አብያተ ክርስቲያናት
+            የኢትዮጵያ ኦርቶዶክስ ተዋሕዶ ቤተክርስቲያን፣ የምሥራቅ ሐረርጌ ሀገረ ስብከት፣ የጥንተ አድባራት ወገዳማት ደብረ ፀሐይ ቅዱስ ጊዮርጊስ እና ደብረ አድኅኖ ቅዱስ ገብርኤል አብያተ ክርስቲያናት
           </p>
           <blockquote className="text-lg font-medium italic text-[#5A5A40] border-l-4 border-olive-400 pl-6 py-4 bg-olive-50 rounded-xl max-w-lg">
             "ፍሬ" ማለት ውጤት፣ ግብ... "ሃይማኖት" ማለት ማመን፣ መታመን እና ተስፋ። በሥራ የሚገለጥ እምነት!
@@ -135,7 +134,7 @@ export const LandingPage: React.FC = () => {
               ስለ ፍሬ ሃይማኖት
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-              ታህሳስ ሳይሆን ከ1960 ዓ.ም ጀምሮ አሁን በኢትዮጵያ አቆጣጠር 2018 ዓ.ም ድረስ ነው። በ"ወጣቶች ማህበር" ስም ተመስርቶ በከተማዋ የመጀመሪያው ሰንበት ትምህርት ቤት ሆኖ ተመሰረተ።
+              ከ1960 ዓ.ም ጀምሮ እስከ አሁን ጊዜ ድረስ አገልግሎቱ ተቀጠለ ነው። በ"ወጣቶች ማህበር" ስም ተመስርቶ በከተማዋ የመጀመሪያው ሰንበት ትምህርት ቤት ሆኖ ተመሰረተ።
             </p>
           </motion.div>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -287,21 +286,13 @@ export const LandingPage: React.FC = () => {
             የሕፃናት ክፍል ወይም አጠቃላይ ጥያቄ ለማግኘት በቀላሉ ይደውሉን
           </p>
           <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            <motion.a href="tel:0938690161" whileHover={{ scale: 1.05 }} className="bg-white text-[#5A5A40] p-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl">
+            <motion.a href="tel:0967877206" whileHover={{ scale: 1.05 }} className="bg-white text-[#5A5A40] p-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl">
               <Phone size={24} />
-              09-38690161
+              09-67877206
             </motion.a>
-            <motion.a href="tel:0979769973" whileHover={{ scale: 1.05 }} className="bg-emerald-500 text-white p-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl">
+            <motion.a href="tel:0923204008" whileHover={{ scale: 1.05 }} className="bg-emerald-500 text-white p-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl">
               <Phone size={24} />
-              ሕፃናት 09-79769973
-            </motion.a>
-            <motion.a href="tel:0936134946" whileHover={{ scale: 1.05 }} className="bg-white text-[#5A5A40] p-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl">
-              <Phone size={24} />
-              09-36134946
-            </motion.a>
-            <motion.a href="https://wa.me/251938690161" whileHover={{ scale: 1.05 }} className="bg-green-600 text-white p-6 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 shadow-2xl">
-              <Phone size={24} />
-              WhatsApp
+              ሕፃናት 09-23204008
             </motion.a>
           </div>
         </div>

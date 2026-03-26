@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  UserPlus, 
-  Upload, 
-  CheckCircle2, 
-  AlertCircle, 
-  Download, 
+import {
+  UserPlus,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
+  Download,
   FileText,
   Copy,
   Loader2
@@ -54,14 +54,14 @@ export const Registration: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       console.log('Starting registration... Profile:', profile);
       const studentId = await generateStudentId();
       if (!studentId) throw new Error('Failed to generate student ID');
 
       const qrToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      
+
       const student: Student = {
         id: studentId,
         fullName: form.fullName,
@@ -89,7 +89,7 @@ export const Registration: React.FC = () => {
         if (parsed.error.includes('insufficient permissions')) {
           message = `Permission denied. Your role is ${profile?.role || 'unknown'}. You must be a Super Admin to register students.`;
         }
-      } catch (e) {}
+      } catch (e) { }
       setError(message);
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export const Registration: React.FC = () => {
     setLoading(true);
     setBulkResults(null);
     const reader = new FileReader();
-    
+
     reader.onload = async (event) => {
       const csvData = event.target?.result as string;
       parse(csvData, { columns: true, skip_empty_lines: true }, async (err, records) => {
@@ -115,7 +115,7 @@ export const Registration: React.FC = () => {
 
         let successCount = 0;
         const errors: string[] = [];
-        
+
         for (const record of records) {
           try {
             const studentId = await generateStudentId();
@@ -135,7 +135,7 @@ export const Registration: React.FC = () => {
             errors.push(`Failed for ${record['Full Name'] || 'Unknown'}`);
           }
         }
-        
+
         setBulkResults({ total: records.length, success: successCount, errors });
         setLoading(false);
       });
@@ -160,13 +160,13 @@ export const Registration: React.FC = () => {
           <p className="text-gray-500">Register new students individually or in bulk</p>
         </div>
         <div className="flex bg-white p-1 rounded-full shadow-sm border border-gray-100">
-          <button 
+          <button
             onClick={() => setBulkMode(false)}
             className={cn("px-6 py-2 rounded-full text-sm font-medium transition-all", !bulkMode ? "bg-[#5A5A40] text-white" : "text-gray-500 hover:bg-gray-50")}
           >
             Individual
           </button>
-          <button 
+          <button
             onClick={() => setBulkMode(true)}
             className={cn("px-6 py-2 rounded-full text-sm font-medium transition-all", bulkMode ? "bg-[#5A5A40] text-white" : "text-gray-500 hover:bg-gray-50")}
           >
@@ -198,13 +198,13 @@ export const Registration: React.FC = () => {
                   <p className="text-xl font-mono font-bold text-[#5A5A40]">{success.id}</p>
                 </div>
                 <div className="flex justify-center gap-4">
-                  <button 
+                  <button
                     onClick={() => downloadQR(success)}
                     className="flex items-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors"
                   >
                     <Download size={18} /> Download QR
                   </button>
-                  <button 
+                  <button
                     onClick={() => setSuccess(null)}
                     className="flex items-center gap-2 border border-gray-200 px-6 py-3 rounded-full hover:bg-gray-50 transition-colors"
                   >
@@ -217,53 +217,53 @@ export const Registration: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</label>
-                    <input 
+                    <input
                       required
                       value={form.fullName}
-                      onChange={e => setForm({...form, fullName: e.target.value})}
+                      onChange={e => setForm({ ...form, fullName: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
                       placeholder="Enter full name"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Phone Number</label>
-                    <input 
+                    <input
                       required
                       value={form.phone}
-                      onChange={e => setForm({...form, phone: e.target.value})}
+                      onChange={e => setForm({ ...form, phone: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
                       placeholder="09..."
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Email (Optional)</label>
-                    <input 
+                    <input
                       type="email"
                       value={form.email}
-                      onChange={e => setForm({...form, email: e.target.value})}
+                      onChange={e => setForm({ ...form, email: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
                       placeholder="example@mail.com"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Department</label>
-                    <select 
+                    <select
                       value={form.department}
-                      onChange={e => setForm({...form, department: e.target.value})}
+                      onChange={e => setForm({ ...form, department: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none"
                     >
                       {DEPARTMENTS.map(dept => <option key={dept} value={dept}>{dept}</option>)}
                     </select>
                   </div>
                 </div>
-                
+
                 {error && (
                   <div className="p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-3 text-sm">
                     <AlertCircle size={18} /> {error}
                   </div>
                 )}
 
-                <button 
+                <button
                   disabled={loading}
                   className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-olive-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
@@ -301,7 +301,7 @@ export const Registration: React.FC = () => {
                     </ul>
                   </div>
                 )}
-                <button 
+                <button
                   onClick={() => setBulkResults(null)}
                   className="bg-[#5A5A40] text-white px-8 py-3 rounded-full hover:bg-[#4A4A30] transition-colors"
                 >
@@ -317,7 +317,7 @@ export const Registration: React.FC = () => {
                   <h2 className="text-2xl font-serif font-bold">Bulk Registration</h2>
                   <p className="text-gray-500 max-w-sm mx-auto">Upload a CSV file with columns: Full Name, Phone, Email, Department</p>
                 </div>
-                
+
                 <div className="flex justify-center gap-4">
                   <label className="cursor-pointer bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-olive-900/20 flex items-center gap-2">
                     <FileText size={20} />
@@ -325,7 +325,7 @@ export const Registration: React.FC = () => {
                     <input type="file" accept=".csv" className="hidden" onChange={handleBulkUpload} disabled={loading} />
                   </label>
                 </div>
-                
+
                 <div className="text-xs text-gray-400">
                   <p>Make sure your CSV follows the required format.</p>
                   <button className="text-[#5A5A40] font-bold mt-2 hover:underline">Download Template</button>
