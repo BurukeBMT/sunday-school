@@ -13,6 +13,7 @@ import {
 import { collection, addDoc, getDocs, query, orderBy, limit, setDoc, doc } from 'firebase/firestore';
 import { parse } from 'csv-parse/browser/esm';
 import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { DEPARTMENTS, Student } from '../types';
 import { cn } from '../lib/utils';
@@ -144,12 +145,69 @@ export const Registration: React.FC = () => {
   };
 
   const downloadQR = async (student: Student) => {
-    const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
-    const url = await QRCode.toDataURL(qrData, { width: 400, margin: 2 });
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `QR_${student.id.replace(/\//g, '_')}.png`;
-    link.click();
+    const { id, fullName, phone, department, qrToken } = student;
+    const qrData = JSON.stringify({ id, token: qrToken });
+    const qrUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
+
+    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] }); // Standard ID size
+
+    // Logo bg - fetch base64
+    try {
+      const logoRes = await fetch('/logo.jpg');
+      const logoBlob = await logoRes.blob();
+      const logoReader = new FileReader();
+      logoReader.readAsDataURL(logoBlob);
+      await new Promise(resolve => {
+        logoReader.onload = () => {
+          pdf.addImage(logoReader.result as string, 'JPEG', 2, 2, 81.6, 49.98, undefined, 'FAST');
+          resolve(null);
+        };
+      });
+    } catch (e) {
+      // Fallback bg gradient if logo fail
+      pdf.setFillColor(245, 245, 220);
+      pdf.rect(0, 0, 85.6, 53.98, 'F');
+    }
+
+    // Interactive bg pattern (lines for printable texture)
+    pdf.setDrawColor(220, 220, 200);
+    for (let i = 0; i < 85.6; i += 5) {
+      pdf.line(i, 0, i, 53.98);
+    }
+
+    // Title
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.setTextColor(26, 26, 26);
+    pdf.text('Sunday School ID Card', 42.8, 8, { align: 'center' });
+
+    // ID big mono
+    pdf.setFont('courier', 'bold');
+    pdf.setFontSize(14);
+    pdf.text(id, 42.8, 22, { align: 'center' });
+
+    // Name
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text(fullName, 42.8, 30, { align: 'center' });
+
+    // Dept/Phone small
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.text(department, 42.8, 38, { align: 'center' });
+    pdf.text(phone, 42.8, 42, { align: 'center' });
+
+    // QR centered bottom
+    const qrImg = new Image();
+    qrImg.src = qrUrl;
+    await new Promise(resolve => {
+      qrImg.onload = () => {
+        pdf.addImage(qrImg, 'PNG', 18, 35, 50, 50);
+        resolve(null);
+      };
+    });
+
+    pdf.save(`SundaySchool_ID_${id.replace(/\//g, '_')}.pdf`);
   };
 
   return (
