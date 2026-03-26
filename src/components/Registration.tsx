@@ -132,24 +132,47 @@ export const Registration: React.FC = () => {
         const errors: string[] = [];
 
         for (let index = 0; index < records.length; index++) {
-          const record = records[index];
+          const record = records[index] as Record<string, unknown>;
+
+          const normalizedRecord: Record<string, string> = {};
+          Object.entries(record).forEach(([key, value]) => {
+            if (!key) return;
+            const normalizedKey = key.toString().trim().toLowerCase();
+            if (value !== undefined && value !== null) {
+              normalizedRecord[normalizedKey] = value.toString().trim();
+            }
+          });
+
+          const fullName = normalizedRecord['full name'] || normalizedRecord['fullname'] || normalizedRecord['name'] || normalizedRecord['ሙሉ ስም'] || '';
+          const phone = normalizedRecord['phone'] || normalizedRecord['phone number'] || normalizedRecord['ስልክ'] || '';
+          const email = normalizedRecord['email'] || normalizedRecord['email address'] || '';
+          let department = normalizedRecord['department'] || normalizedRecord['ምድብ'] || '';
+          if (!department || !DEPARTMENTS.includes(department)) department = DEPARTMENTS[0];
+
+          if (!fullName || !phone) {
+            errors.push(`Row ${index + 1}: missing required fields (Full Name and Phone are required).`);
+            continue;
+          }
+
           try {
             maxNum++; // Sequential
             const studentId = `ፍ-ሃ-ሰ-ት-${maxNum.toString().padStart(5, '0')}`;
             const qrToken = Math.random().toString(36).substring(2, 15);
             const student: Student = {
               id: studentId,
-              fullName: record['Full Name'] || record['fullName'],
-              phone: record['Phone'] || record['phone'],
-              email: record['Email'] || record['email'] || '',
-              department: record['Department'] || record['department'] || DEPARTMENTS[0],
+              fullName,
+              phone,
+              email,
+              department,
               qrToken,
               createdAt: new Date().toISOString()
             };
             await setDoc(doc(db, 'students', studentId), student);
             successCount++;
-          } catch (err) {
-            errors.push(`Row ${index + 1} (${record['Full Name'] || 'Unknown'}): ${err}`);
+          } catch (err: any) {
+            const rowName = fullName || 'Unknown';
+            const errMessage = err instanceof Error ? err.message : String(err);
+            errors.push(`Row ${index + 1} (${rowName}): ${errMessage}`);
           }
         }
 
