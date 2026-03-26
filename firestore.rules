@@ -49,7 +49,7 @@ service cloud.firestore {
 
     function isValidStudent(data) {
       return data.id is string && data.fullName is string && data.phone is string && 
-             data.department is string && data.qrToken is string && data.createdAt is string &&
+             data.department in DEPARTMENTS && data.qrToken is string && data.createdAt is string &&
              (!('email' in data) || data.email is string);
     }
 
@@ -74,7 +74,7 @@ service cloud.firestore {
 
     match /students/{studentId} {
       allow read: if isAdmin();
-      allow create: if isSuperAdmin() && isValidStudent(request.resource.data);
+      allow create: if isAdmin() && isValidStudent(request.resource.data);
       allow update: if isSuperAdmin() && isValidStudent(request.resource.data);
       allow delete: if isSuperAdmin();
     }
