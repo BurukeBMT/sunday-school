@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  getDocs, 
-  orderBy, 
-  where, 
-  deleteDoc, 
+import {
+  collection,
+  query,
+  getDocs,
+  orderBy,
+  where,
+  deleteDoc,
   doc,
   onSnapshot
 } from 'firebase/firestore';
-import { 
-  Search, 
-  Download, 
-  Trash2, 
-  QrCode, 
+import {
+  Search,
+  Download,
+  Trash2,
+  QrCode,
   Filter,
   MoreVertical,
   ChevronLeft,
@@ -25,6 +25,7 @@ import { db } from '../firebase';
 import { Student, DEPARTMENTS } from '../types';
 import { cn } from '../lib/utils';
 import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
 
 export const StudentList: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -45,41 +46,86 @@ export const StudentList: React.FC = () => {
   }, []);
 
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase()) || 
-                          s.id.toLowerCase().includes(search.toLowerCase()) ||
-                          s.phone.includes(search);
+    const matchesSearch = s.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      s.id.toLowerCase().includes(search.toLowerCase()) ||
+      s.phone.includes(search);
     const matchesDept = deptFilter === 'All' || s.department === deptFilter;
     return matchesSearch && matchesDept;
   });
 
   const downloadSingleQR = async (student: Student) => {
-    const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
-    const url = await QRCode.toDataURL(qrData, { width: 400, margin: 2 });
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `QR_${student.id.replace(/\//g, '_')}.png`;
-    link.click();
+    const { id, fullName, phone, department, qrToken } = student;
+    const qrData = JSON.stringify({ id, token: qrToken });
+    const qrUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
+
+    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] }); // ID size
+
+    // Logo
+    try {
+      const logoRes = await fetch('/logo.jpg');
+      const logoBlob = await logoRes.blob();
+      const logoReader = new FileReader();
+      logoReader.readAsDataURL(logoBlob);
+      await new Promise(resolve => logoReader.onload = () => {
+        pdf.addImage(logoReader.result as string, 'JPEG', 2, 2, 81.6, 49.98, undefined, 'FAST');
+        resolve(null);
+      });
+    } catch {
+      pdf.setFillColor(245, 245, 220);
+      pdf.rect(0, 0, 85.6, 53.98, 'F');
+    }
+
+    // Pattern bg
+    pdf.setDrawColor(220, 220, 200);
+    for (let i = 0; i < 85.6; i += 5) pdf.line(i, 0, i, 53.98);
+
+    // Texts
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(8);
+    pdf.text('Sunday School ID Card', 42.8, 8, { align: 'center' });
+    pdf.setFont('courier', 'bold');
+    pdf.setFontSize(14);
+    pdf.text(id, 42.8, 22, { align: 'center' });
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.text(fullName, 42.8, 30, { align: 'center' });
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.text(department, 42.8, 38, { align: 'center' });
+    pdf.text(phone, 42.8, 42, { align: 'center' });
+
+    // QR
+    const qrImg = new Image();
+    qrImg.src = qrUrl;
+    await new Promise(resolve => {
+      qrImg.onload = () => {
+        pdf.addImage(qrImg, 'PNG', 18, 35, 50, 50);
+        resolve(null);
+      };
+    });
+
+    pdf.save(`SundaySchool_ID_${id.replace(/\//g, '_')}.pdf`);
   };
 
   const downloadBulkQR = async () => {
     setDownloading(true);
     try {
-      const response = await fetch('/api/bulk-qr', {
+      const response = await fetch('/api/bulk-id', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ students: filteredStudents.map(s => ({ id: s.id, fullName: s.fullName, qrToken: s.qrToken })) })
+        body: JSON.stringify({ students: filteredStudents.map(s => ({ id: s.id, fullName: s.fullName, qrToken: s.qrToken, department: s.department, phone: s.phone })) })
       });
-      
+
       if (!response.ok) throw new Error('Failed to generate ZIP');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `student_qrs_${format(new Date(), 'yyyyMMdd')}.zip`;
+      link.download = `sunday_school_ids_${format(new Date(), 'yyyyMMdd')}.zip`;
       link.click();
     } catch (err) {
-      alert('Failed to download bulk QRs. Please try again.');
+      alert('Failed to download bulk IDs. Please try again.');
     } finally {
       setDownloading(false);
     }
@@ -98,13 +144,13 @@ export const StudentList: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Student Directory</h1>
           <p className="text-gray-500">Manage and view all registered students</p>
         </div>
-        <button 
+        <button
           onClick={downloadBulkQR}
           disabled={downloading || filteredStudents.length === 0}
           className="flex items-center justify-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20 disabled:opacity-50"
         >
           {downloading ? <Loader2 className="animate-spin" size={18} /> : <FileArchive size={18} />}
-          Download Bulk QRs ({filteredStudents.length})
+          Download Bulk IDs ({filteredStudents.length})
         </button>
       </header>
 
@@ -112,7 +158,7 @@ export const StudentList: React.FC = () => {
       <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          <input 
+          <input
             type="text"
             placeholder="Search by name, ID, or phone..."
             value={search}
@@ -122,7 +168,7 @@ export const StudentList: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           <Filter className="text-gray-400" size={20} />
-          <select 
+          <select
             value={deptFilter}
             onChange={e => setDeptFilter(e.target.value)}
             className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10"
@@ -172,14 +218,14 @@ export const StudentList: React.FC = () => {
                   <td className="px-8 py-4 text-gray-500">{student.phone}</td>
                   <td className="px-8 py-4 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
+                      <button
                         onClick={() => downloadSingleQR(student)}
                         className="p-2 text-olive-600 hover:bg-olive-50 rounded-lg transition-colors"
                         title="Download QR"
                       >
                         <QrCode size={18} />
                       </button>
-                      <button 
+                      <button
                         onClick={() => deleteStudent(student.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete Student"

@@ -1,9 +1,12 @@
-# Sunday School Landing Page Update TODO
+# Sunday School QR ID Cards TODO
 
-## Approved Plan Steps
-1. [x] Add Amharic font to src/index.css (Google Fonts Noto Sans Ethiopic).
-2. [x] Edit src/components/LandingPage.tsx: Hero (name/address/slogan), About, Services accordion, Core Values, Guidelines, Contact with phones.
-3. [x] Test local: npm run dev, check responsive/Amharic (warnings fixed).
-4. [ ] Commit/push - CI/CD auto-deploys to live site.
+## Approved Plan Steps (QR to PDF ID Cards)
+1. [x] Install deps
+2. [x] Registration PDF
+3. [x] StudentList PDF/single bulk ready
+4. [x] server.ts bulk-id endpoint
+5. [ ] Test: register student, download single PDF from Reg/StudentList, bulk ZIP, scan QR in Scanner, print preview
+6. [x] Done
 
-Current: 3/4 done. Landing live at localhost:3000 - refresh browser.
+Current: 5/6 - Test now with app running at localhost:3000
+
