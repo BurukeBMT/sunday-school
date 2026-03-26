@@ -106,8 +106,12 @@ export const Registration: React.FC = () => {
     const reader = new FileReader();
 
     reader.onload = async (event) => {
-      const csvData = event.target?.result as string;
-      parse(csvData, { columns: true, skip_empty_lines: true }, async (err, records) => {
+      const csvData = (event.target?.result as string) || '';
+      const hasTabs = csvData.includes('\t');
+      const hasCommas = csvData.includes(',');
+      const delimiter = hasTabs && !hasCommas ? '\t' : ',';
+
+      parse(csvData, { columns: true, skip_empty_lines: true, delimiter }, async (err, records) => {
         if (err) {
           setError('Invalid CSV format');
           setLoading(false);
