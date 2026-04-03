@@ -189,12 +189,14 @@ export const Registration: React.FC = () => {
 
   const downloadQR = async (student: Student) => {
     const { id, fullName, phone, department, qrToken } = student;
-    const qrData = JSON.stringify({ id, token: qrToken });
-    const qrUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
+    const qrData = JSON.stringify({ id, token: qrToken, name: fullName });
+    const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
 
-    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] }); // Standard ID size
+    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] }); // Standard ID card size
+    const pageW = 85.6;
+    const pageH = 53.98;
 
-    // Logo bg - fetch base64
+    // Background
     try {
       const logoRes = await fetch('/logo.jpg');
       const logoBlob = await logoRes.blob();
@@ -202,67 +204,70 @@ export const Registration: React.FC = () => {
       logoReader.readAsDataURL(logoBlob);
       await new Promise(resolve => {
         logoReader.onload = () => {
-          pdf.addImage(logoReader.result as string, 'JPEG', 2, 2, 81.6, 49.98, undefined, 'FAST');
+          pdf.addImage(logoReader.result as string, 'JPEG', 0, 0, pageW, pageH);
           resolve(null);
         };
       });
     } catch (e) {
-      // Fallback bg gradient if logo fail
-      pdf.setFillColor(245, 245, 220);
-      pdf.rect(0, 0, 85.6, 53.98, 'F');
+      pdf.setFillColor(250, 245, 235);
+      pdf.rect(0, 0, pageW, pageH, 'F');
     }
 
-    // Background color + border
-    pdf.setFillColor(255, 250, 239);
-    pdf.rect(0, 0, 85.6, 53.98, 'F');
-    pdf.setDrawColor(45, 83, 40);
-    pdf.setLineWidth(1);
-    pdf.roundedRect(1, 1, 83.6, 51.98, 3, 3, 'S');
+    // Overlay translucent panel for legibility
+    pdf.setFillColor(255, 255, 255);
+    pdf.setAlpha(0.85);
+    pdf.rect(2.5, 2.5, pageW - 5, pageH - 5, 'F');
+    pdf.setAlpha(1);
 
-    // Inner frame accent
-    pdf.setDrawColor(207, 173, 93);
-    pdf.setLineWidth(0.6);
-    pdf.roundedRect(3, 3, 79.6, 47.98, 2, 2, 'S');
+    // Border and accent
+    pdf.setDrawColor(15, 80, 35);
+    pdf.setLineWidth(0.9);
+    pdf.roundedRect(1.5, 1.5, pageW - 3, pageH - 3, 2.5, 2.5, 'S');
 
-    // Title
+    // Header
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
-    pdf.setTextColor(18, 64, 28);
-    pdf.text('ፍሬ ሃይማኖት ቅ/ት/ቤት', 42.8, 10, { align: 'center' });
+    pdf.setFontSize(9);
+    pdf.setTextColor(20, 60, 30);
+    pdf.text('ፍሬ ሃይማኖት ሰ/ት/ቤት አቴንዳንስ', pageW / 2, 9, { align: 'center' });
 
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7);
-    pdf.setTextColor(11, 21, 4);
-    pdf.text('Fere Haymanot Sunday School', 42.8, 14, { align: 'center' });
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(45, 45, 45);
+    pdf.text('Fere Haymanot Sunday School', pageW / 2, 12.5, { align: 'center' });
 
-    // QR Code
+    // QR Code block
+    const qrSize = 28;
+    const qrX = (pageW - qrSize) / 2;
+    const qrY = 15;
     const qrImg = new Image();
     qrImg.src = qrUrl;
     await new Promise(resolve => {
       qrImg.onload = () => {
-        pdf.addImage(qrImg, 'PNG', 30, 17, 25, 25);
+        pdf.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
         resolve(null);
       };
     });
 
-    // QR Label
+    // QR label
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(5.5);
-    pdf.setTextColor(80, 80, 80);
-    pdf.text('ፍሬ ሃይማኖት እርስዎ ቁጥር', 42.8, 42, { align: 'center' });
+    pdf.setFontSize(6);
+    pdf.setTextColor(65, 65, 65);
+    pdf.text('SCAN ME', pageW / 2, qrY + qrSize + 5, { align: 'center' });
 
-    // Full name and ID fields
+    // Student details block
+    const detailStartY = qrY + qrSize + 10;
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7);
+    pdf.setFontSize(6.8);
     pdf.setTextColor(0, 0, 0);
-    const nameLabel = `Name: ${fullName}`;
-    const idLabel = `ID Number: ${id}`;
-    const wrappedName = pdf.splitTextToSize(nameLabel, 78);
-    pdf.text(wrappedName, 4, 47);
-    pdf.text(idLabel, 4, 51.5);
+    const nameLine = pdf.splitTextToSize(`Name: ${fullName}`, pageW - 6);
+    pdf.text(nameLine, 3, detailStartY);
+    pdf.text(`ID Number: ${id}`, 3, detailStartY + (nameLine.length * 5) + 1);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6.5);
+    pdf.text(`Department: ${department}`, 3, detailStartY + (nameLine.length * 5) + 6);
+    pdf.text(`Phone: ${phone}`, 3, detailStartY + (nameLine.length * 5) + 10);
 
-
-    pdf.save(`SundaySchool_ID_${id.replace(/\//g, '_')}.pdf`);
+    pdf.save(`FereHaymanot_ID_${id.replace(/\//g, '_')}.pdf`);
   };
 
   return (
