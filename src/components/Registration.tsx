@@ -189,56 +189,58 @@ export const Registration: React.FC = () => {
 
   const downloadQR = async (student: Student) => {
     const { id, fullName, phone, department, qrToken } = student;
-    const qrData = JSON.stringify({ id, token: qrToken, name: fullName });
+    const qrData = JSON.stringify({ org: 'Fere Haymanot Sunday School', name: fullName, id });
     const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
 
-    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] }); // Standard ID card size
-    const pageW = 85.6;
-    const pageH = 53.98;
+    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] });
+    const cardW = 85.6;
+    const cardH = 53.98;
 
-    // Background
-    try {
-      const logoRes = await fetch('/logo.jpg');
-      const logoBlob = await logoRes.blob();
-      const logoReader = new FileReader();
-      logoReader.readAsDataURL(logoBlob);
-      await new Promise(resolve => {
-        logoReader.onload = () => {
-          pdf.addImage(logoReader.result as string, 'JPEG', 0, 0, pageW, pageH);
-          resolve(null);
-        };
-      });
-    } catch (e) {
-      pdf.setFillColor(250, 245, 235);
-      pdf.rect(0, 0, pageW, pageH, 'F');
-    }
+    // Card background
+    pdf.setFillColor(252, 249, 242);
+    pdf.rect(0, 0, cardW, cardH, 'F');
 
-    // Overlay translucent panel for legibility
-    pdf.setFillColor(255, 255, 255);
-    pdf.setAlpha(0.85);
-    pdf.rect(2.5, 2.5, pageW - 5, pageH - 5, 'F');
-    pdf.setAlpha(1);
+    // Main border
+    pdf.setDrawColor(74, 124, 68);
+    pdf.setLineWidth(1.2);
+    pdf.roundedRect(1, 1, cardW - 2, cardH - 2, 3, 3, 'S');
 
-    // Border and accent
-    pdf.setDrawColor(15, 80, 35);
-    pdf.setLineWidth(0.9);
-    pdf.roundedRect(1.5, 1.5, pageW - 3, pageH - 3, 2.5, 2.5, 'S');
+    // Header accent
+    pdf.setFillColor(236, 221, 180);
+    pdf.roundedRect(2.5, 2.5, cardW - 5, 12.5, 2.5, 2.5, 'F');
+    pdf.setDrawColor(180, 136, 50);
+    pdf.setLineWidth(0.7);
+    pdf.roundedRect(2.5, 2.5, cardW - 5, 12.5, 2.5, 2.5, 'S');
 
-    // Header
+    // Header text
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
-    pdf.setTextColor(20, 60, 30);
-    pdf.text('ፍሬ ሃይማኖት ሰ/ት/ቤት አቴንዳንስ', pageW / 2, 9, { align: 'center' });
+    pdf.setFontSize(8.2);
+    pdf.setTextColor(45, 79, 38);
+    pdf.text('ፍሬ ሃይማኖት ሰ/ት/ቤት', cardW / 2, 8.5, { align: 'center' });
 
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(6.5);
-    pdf.setTextColor(45, 45, 45);
-    pdf.text('Fere Haymanot Sunday School', pageW / 2, 12.5, { align: 'center' });
+    pdf.setTextColor(48, 48, 48);
+    pdf.text('Fere Haymanot Sunday School', cardW / 2, 11.5, { align: 'center' });
 
-    // QR Code block
-    const qrSize = 28;
-    const qrX = (pageW - qrSize) / 2;
-    const qrY = 15;
+    // Decorative icons
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(12);
+    pdf.text('🌾', 15, 16);
+    pdf.text('🍇', cardW - 15, 16);
+    pdf.text('†', cardW / 2, 16, { align: 'center' });
+
+    // QR card
+    const qrSize = 30;
+    const qrX = (cardW - qrSize) / 2;
+    const qrY = 20;
+
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 3, 3, 'F');
+    pdf.setDrawColor(180, 136, 50);
+    pdf.setLineWidth(0.9);
+    pdf.roundedRect(qrX - 2, qrY - 2, qrSize + 4, qrSize + 4, 3, 3, 'S');
+
     const qrImg = new Image();
     qrImg.src = qrUrl;
     await new Promise(resolve => {
@@ -248,24 +250,38 @@ export const Registration: React.FC = () => {
       };
     });
 
-    // QR label
+    // QR caption
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6);
-    pdf.setTextColor(65, 65, 65);
-    pdf.text('SCAN ME', pageW / 2, qrY + qrSize + 5, { align: 'center' });
+    pdf.setFontSize(5.8);
+    pdf.setTextColor(75, 75, 75);
+    pdf.text('ፍሬ ሃይማኖት ሰ/ት/ቤት', cardW / 2, qrY + qrSize + 7, { align: 'center' });
 
-    // Student details block
-    const detailStartY = qrY + qrSize + 10;
+    // Data panel
+    const infoY = qrY + qrSize + 11;
+    pdf.setFillColor(255, 255, 255);
+    pdf.roundedRect(4, infoY, cardW - 8, 16.5, 2.5, 2.5, 'F');
+    pdf.setDrawColor(180, 136, 50);
+    pdf.setLineWidth(0.7);
+    pdf.roundedRect(4, infoY, cardW - 8, 16.5, 2.5, 2.5, 'S');
+
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(6.8);
-    pdf.setTextColor(0, 0, 0);
-    const nameLine = pdf.splitTextToSize(`Name: ${fullName}`, pageW - 6);
-    pdf.text(nameLine, 3, detailStartY);
-    pdf.text(`ID Number: ${id}`, 3, detailStartY + (nameLine.length * 5) + 1);
+    pdf.setTextColor(20, 20, 20);
+    const wrappedName = pdf.splitTextToSize(`Name: ${fullName}`, cardW - 10);
+    pdf.text(wrappedName, 5, infoY + 5);
+    pdf.text(`ID Number: ${id}`, 5, infoY + 5 + wrappedName.length * 5.2);
+
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(6.5);
-    pdf.text(`Department: ${department}`, 3, detailStartY + (nameLine.length * 5) + 6);
-    pdf.text(`Phone: ${phone}`, 3, detailStartY + (nameLine.length * 5) + 10);
+    pdf.setFontSize(6.2);
+    pdf.setTextColor(70, 70, 70);
+    pdf.text(`Department: ${department}`, 5, infoY + 5 + wrappedName.length * 5.2 + 5.5);
+    pdf.text(`Phone: ${phone}`, 5, infoY + 5 + wrappedName.length * 5.2 + 10.5);
+
+    // Corner accent
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(12);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('⛪', cardW - 8, cardH - 6);
 
     pdf.save(`FereHaymanot_ID_${id.replace(/\//g, '_')}.pdf`);
   };
