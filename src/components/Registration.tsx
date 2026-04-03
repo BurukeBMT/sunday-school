@@ -212,64 +212,55 @@ export const Registration: React.FC = () => {
       pdf.rect(0, 0, 85.6, 53.98, 'F');
     }
 
-    // Interactive bg pattern (lines for printable texture)
-    pdf.setDrawColor(220, 220, 200);
-    for (let i = 0; i < 85.6; i += 5) {
-      pdf.line(i, 0, i, 53.98);
-    }
+    // Background color + border
+    pdf.setFillColor(255, 250, 239);
+    pdf.rect(0, 0, 85.6, 53.98, 'F');
+    pdf.setDrawColor(45, 83, 40);
+    pdf.setLineWidth(1);
+    pdf.roundedRect(1, 1, 83.6, 51.98, 3, 3, 'S');
+
+    // Inner frame accent
+    pdf.setDrawColor(207, 173, 93);
+    pdf.setLineWidth(0.6);
+    pdf.roundedRect(3, 3, 79.6, 47.98, 2, 2, 'S');
 
     // Title
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
-    pdf.setTextColor(26, 26, 26);
-    pdf.text('Sunday School ID Card', 42.8, 7, { align: 'center' });
+    pdf.setTextColor(18, 64, 28);
+    pdf.text('ፍሬ ሃይማኖት ቅ/ት/ቤት', 42.8, 10, { align: 'center' });
 
-    // Student ID field label
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(5.5);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('STUDENT ID', 42.8, 12, { align: 'center' });
+    pdf.setFontSize(7);
+    pdf.setTextColor(11, 21, 4);
+    pdf.text('Fere Haymanot Sunday School', 42.8, 14, { align: 'center' });
 
-    // ID big mono
-    pdf.setFont('courier', 'bold');
-    pdf.setFontSize(10);
-    pdf.setTextColor(26, 26, 26);
-    pdf.text(id, 42.8, 16, { align: 'center' });
-
-    // Full Name field label
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(5.5);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('FULL NAME', 42.8, 20.5, { align: 'center' });
-
-    // Name (wrapped)
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
-    pdf.setTextColor(26, 26, 26);
-    const nameLines = pdf.splitTextToSize(fullName, 70);
-    pdf.text(nameLines, 42.8, 24, { align: 'center' });
-
-    // Department and Phone
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(5.5);
-    pdf.setTextColor(80, 80, 80);
-    pdf.text(`${department} | ${phone}`, 42.8, 29.5, { align: 'center' });
-
-    // QR Code label
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(5.5);
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('SCAN QR CODE', 42.8, 34.5, { align: 'center' });
-
-    // QR centered bottom
+    // QR Code
     const qrImg = new Image();
     qrImg.src = qrUrl;
     await new Promise(resolve => {
       qrImg.onload = () => {
-        pdf.addImage(qrImg, 'PNG', 31.8, 36.5, 22, 22);
+        pdf.addImage(qrImg, 'PNG', 30, 17, 25, 25);
         resolve(null);
       };
     });
+
+    // QR Label
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(5.5);
+    pdf.setTextColor(80, 80, 80);
+    pdf.text('ፍሬ ሃይማኖት እርስዎ ቁጥር', 42.8, 42, { align: 'center' });
+
+    // Full name and ID fields
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7);
+    pdf.setTextColor(0, 0, 0);
+    const nameLabel = `Name: ${fullName}`;
+    const idLabel = `ID Number: ${id}`;
+    const wrappedName = pdf.splitTextToSize(nameLabel, 78);
+    pdf.text(wrappedName, 4, 47);
+    pdf.text(idLabel, 4, 51.5);
+
 
     pdf.save(`SundaySchool_ID_${id.replace(/\//g, '_')}.pdf`);
   };
