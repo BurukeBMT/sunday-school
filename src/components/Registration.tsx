@@ -224,28 +224,48 @@ export const Registration: React.FC = () => {
     pdf.setTextColor(26, 26, 26);
     pdf.text('Sunday School ID Card', 42.8, 8, { align: 'center' });
 
+    // Student ID field label
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('STUDENT ID', 42.8, 15, { align: 'center' });
+
     // ID big mono
     pdf.setFont('courier', 'bold');
-    pdf.setFontSize(14);
+    pdf.setFontSize(12);
+    pdf.setTextColor(26, 26, 26);
     pdf.text(id, 42.8, 22, { align: 'center' });
+
+    // Full Name field label
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('FULL NAME', 42.8, 27, { align: 'center' });
 
     // Name
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.text(fullName, 42.8, 30, { align: 'center' });
+    pdf.setFontSize(9);
+    pdf.setTextColor(26, 26, 26);
+    pdf.text(fullName, 42.8, 33, { align: 'center' });
 
-    // Dept/Phone small
+    // Department and Phone
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
-    pdf.text(department, 42.8, 38, { align: 'center' });
-    pdf.text(phone, 42.8, 42, { align: 'center' });
+    pdf.setFontSize(6);
+    pdf.setTextColor(80, 80, 80);
+    pdf.text(`${department} | ${phone}`, 42.8, 40, { align: 'center' });
+
+    // QR Code label
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6);
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('SCAN QR CODE', 42.8, 45, { align: 'center' });
 
     // QR centered bottom
     const qrImg = new Image();
     qrImg.src = qrUrl;
     await new Promise(resolve => {
       qrImg.onload = () => {
-        pdf.addImage(qrImg, 'PNG', 18, 35, 50, 50);
+        pdf.addImage(qrImg, 'PNG', 25, 47, 43, 43);
         resolve(null);
       };
     });
