@@ -222,50 +222,51 @@ export const Registration: React.FC = () => {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
     pdf.setTextColor(26, 26, 26);
-    pdf.text('Sunday School ID Card', 42.8, 8, { align: 'center' });
+    pdf.text('Sunday School ID Card', 42.8, 7, { align: 'center' });
 
     // Student ID field label
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6);
+    pdf.setFontSize(5.5);
     pdf.setTextColor(100, 100, 100);
-    pdf.text('STUDENT ID', 42.8, 15, { align: 'center' });
+    pdf.text('STUDENT ID', 42.8, 12, { align: 'center' });
 
     // ID big mono
     pdf.setFont('courier', 'bold');
-    pdf.setFontSize(12);
+    pdf.setFontSize(10);
     pdf.setTextColor(26, 26, 26);
-    pdf.text(id, 42.8, 22, { align: 'center' });
+    pdf.text(id, 42.8, 16, { align: 'center' });
 
     // Full Name field label
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6);
+    pdf.setFontSize(5.5);
     pdf.setTextColor(100, 100, 100);
-    pdf.text('FULL NAME', 42.8, 27, { align: 'center' });
+    pdf.text('FULL NAME', 42.8, 20.5, { align: 'center' });
 
-    // Name
+    // Name (wrapped)
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(9);
+    pdf.setFontSize(8);
     pdf.setTextColor(26, 26, 26);
-    pdf.text(fullName, 42.8, 33, { align: 'center' });
+    const nameLines = pdf.splitTextToSize(fullName, 70);
+    pdf.text(nameLines, 42.8, 24, { align: 'center' });
 
     // Department and Phone
     pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(6);
+    pdf.setFontSize(5.5);
     pdf.setTextColor(80, 80, 80);
-    pdf.text(`${department} | ${phone}`, 42.8, 40, { align: 'center' });
+    pdf.text(`${department} | ${phone}`, 42.8, 29.5, { align: 'center' });
 
     // QR Code label
     pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6);
+    pdf.setFontSize(5.5);
     pdf.setTextColor(100, 100, 100);
-    pdf.text('SCAN QR CODE', 42.8, 45, { align: 'center' });
+    pdf.text('SCAN QR CODE', 42.8, 34.5, { align: 'center' });
 
     // QR centered bottom
     const qrImg = new Image();
     qrImg.src = qrUrl;
     await new Promise(resolve => {
       qrImg.onload = () => {
-        pdf.addImage(qrImg, 'PNG', 25, 47, 43, 43);
+        pdf.addImage(qrImg, 'PNG', 31.8, 36.5, 22, 22);
         resolve(null);
       };
     });
