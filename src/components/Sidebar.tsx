@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  LayoutDashboard, 
-  UserPlus, 
-  Users, 
-  BookOpen, 
-  QrCode, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  UserPlus,
+  Users,
+  BookOpen,
+  QrCode,
+  LogOut,
   ClipboardList,
   Menu,
   X,
@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
@@ -58,11 +58,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <ShieldCheck className="text-white w-6 h-6" />
               </div>
               <div>
-                <h2 className="font-serif font-bold text-lg leading-tight">ፍሬ ሃይማኖት</h2>
+                <h2 className="font-serif font-bold text-lg leading-tight">ፍሬ ሃይማኖት ሰ/ት/ቤት አቴንዳንስ</h2>
                 <p className="text-[10px] uppercase tracking-widest text-[#8E9299]">Sunday School</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setIsOpen(false)}
               className="lg:hidden p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg"
             >
@@ -80,8 +80,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 }}
                 className={cn(
                   "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group",
-                  activeTab === item.id 
-                    ? "bg-[#5A5A40] text-white shadow-lg shadow-olive-900/20" 
+                  activeTab === item.id
+                    ? "bg-[#5A5A40] text-white shadow-lg shadow-olive-900/20"
                     : "text-[#8E9299] hover:bg-white/5 hover:text-white"
                 )}
               >
