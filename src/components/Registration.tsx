@@ -192,9 +192,10 @@ export const Registration: React.FC = () => {
     const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
 
     const canvas = document.createElement('canvas');
-    const canvasSize = 1024;
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
+    const canvasWidth = 1500;
+    const canvasHeight = 950;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -212,9 +213,9 @@ export const Registration: React.FC = () => {
       ctx.closePath();
     };
 
-    // Background template image
+    // Draw the provided template as the card background
     ctx.fillStyle = '#FCF9F2';
-    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     try {
       const templateImg = new Image();
@@ -224,22 +225,24 @@ export const Registration: React.FC = () => {
         templateImg.onload = () => resolve(null);
         templateImg.onerror = reject;
       });
-      ctx.drawImage(templateImg, 0, 0, canvasSize, canvasSize);
+      ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
     } catch (e) {
-      // Fallback background color already painted
+      // Fallback if template cannot load
+      ctx.fillStyle = '#FCF9F2';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     }
 
-    const qrSize = canvasSize * 0.38;
-    const qrX = (canvasSize - qrSize) / 2;
-    const qrY = canvasSize * 0.22;
+    const qrSize = canvasWidth * 0.28;
+    const qrX = (canvasWidth - qrSize) / 2;
+    const qrY = canvasHeight * 0.28;
 
+    const panelMargin = 40;
+    drawRoundedRect(qrX - panelMargin, qrY - panelMargin, qrSize + panelMargin * 2, qrSize + panelMargin * 2, 40);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-    drawRoundedRect(qrX - 28, qrY - 28, qrSize + 56, qrSize + 56, 32);
     ctx.fill();
-
     ctx.strokeStyle = '#CBA64E';
-    ctx.lineWidth = 14;
-    drawRoundedRect(qrX - 28, qrY - 28, qrSize + 56, qrSize + 56, 32);
+    ctx.lineWidth = 12;
+    drawRoundedRect(qrX - panelMargin, qrY - panelMargin, qrSize + panelMargin * 2, qrSize + panelMargin * 2, 40);
     ctx.stroke();
 
     const qrImg = new Image();
@@ -254,14 +257,14 @@ export const Registration: React.FC = () => {
     const textBaseY = qrY + qrSize + 90;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#0F1917';
-    ctx.font = '700 48px Arial';
-    ctx.fillText(fullName, canvasSize / 2, textBaseY);
+    ctx.font = '700 44px Arial';
+    ctx.fillText(fullName, canvasWidth / 2, textBaseY);
 
-    ctx.font = '500 32px Arial';
+    ctx.font = '500 36px Arial';
     ctx.fillStyle = '#1C1C1C';
-    ctx.fillText(`ID: ${id}`, canvasSize / 2, textBaseY + 52);
-    ctx.fillText(`Department: ${department}`, canvasSize / 2, textBaseY + 100);
-    ctx.fillText(`Phone: ${phone}`, canvasSize / 2, textBaseY + 148);
+    ctx.fillText(`ID Number: ${id}`, canvasWidth / 2, textBaseY + 62);
+    ctx.fillText(`Department: ${department}`, canvasWidth / 2, textBaseY + 116);
+    ctx.fillText(`Phone: ${phone}`, canvasWidth / 2, textBaseY + 170);
 
     const imageUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
