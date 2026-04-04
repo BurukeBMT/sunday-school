@@ -13,7 +13,6 @@ import {
 import { collection, addDoc, getDocs, query, orderBy, limit, setDoc, doc } from 'firebase/firestore';
 import { parse } from 'csv-parse/browser/esm';
 import QRCode from 'qrcode';
-import jsPDF from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { DEPARTMENTS, Student } from '../types';
 import { cn } from '../lib/utils';
@@ -192,61 +191,85 @@ export const Registration: React.FC = () => {
     const qrData = JSON.stringify({ org: 'Fere Haymanot Sunday School', name: fullName, id });
     const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
 
-    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 85.6] });
-    const cardW = 85.6;
-    const cardH = 85.6;
+    const canvas = document.createElement('canvas');
+    const canvasSize = 1024;
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    // Template background image
+    const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    };
+
+    // Background template image
+    ctx.fillStyle = '#FCF9F2';
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+
     try {
-      const logoRes = await fetch('/logo.jpg');
-      const logoBlob = await logoRes.blob();
-      const logoReader = new FileReader();
-      logoReader.readAsDataURL(logoBlob);
-      await new Promise(resolve => {
-        logoReader.onload = () => {
-          pdf.addImage(logoReader.result as string, 'JPEG', 0, 0, cardW, cardH);
-          resolve(null);
-        };
+      const templateImg = new Image();
+      templateImg.crossOrigin = 'anonymous';
+      templateImg.src = '/logo.jpg';
+      await new Promise((resolve, reject) => {
+        templateImg.onload = () => resolve(null);
+        templateImg.onerror = reject;
       });
+      ctx.drawImage(templateImg, 0, 0, canvasSize, canvasSize);
     } catch (e) {
-      pdf.setFillColor(252, 249, 242);
-      pdf.rect(0, 0, cardW, cardH, 'F');
+      // Fallback background color already painted
     }
 
-    // QR overlay panel at the center
-    const qrSize = 34;
-    const qrX = (cardW - qrSize) / 2;
-    const qrY = 32;
-    pdf.setFillColor(255, 255, 255);
-    pdf.roundedRect(qrX - 3, qrY - 3, qrSize + 6, qrSize + 6, 4, 4, 'F');
-    pdf.setDrawColor(203, 166, 78);
-    pdf.setLineWidth(0.8);
-    pdf.roundedRect(qrX - 3, qrY - 3, qrSize + 6, qrSize + 6, 4, 4, 'S');
+    const qrSize = canvasSize * 0.38;
+    const qrX = (canvasSize - qrSize) / 2;
+    const qrY = canvasSize * 0.22;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    drawRoundedRect(qrX - 28, qrY - 28, qrSize + 56, qrSize + 56, 32);
+    ctx.fill();
+
+    ctx.strokeStyle = '#CBA64E';
+    ctx.lineWidth = 14;
+    drawRoundedRect(qrX - 28, qrY - 28, qrSize + 56, qrSize + 56, 32);
+    ctx.stroke();
 
     const qrImg = new Image();
+    qrImg.crossOrigin = 'anonymous';
     qrImg.src = qrUrl;
-    await new Promise(resolve => {
-      qrImg.onload = () => {
-        pdf.addImage(qrImg, 'PNG', qrX, qrY, qrSize, qrSize);
-        resolve(null);
-      };
+    await new Promise((resolve, reject) => {
+      qrImg.onload = () => resolve(null);
+      qrImg.onerror = reject;
     });
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-    // Text overlay below QR
-    const infoY = qrY + qrSize + 8;
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(15, 25, 15);
-    pdf.text(`Name: ${fullName}`, cardW / 2, infoY, { align: 'center' });
+    const textBaseY = qrY + qrSize + 90;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#0F1917';
+    ctx.font = '700 48px Arial';
+    ctx.fillText(fullName, canvasSize / 2, textBaseY);
 
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(6.2);
-    pdf.setTextColor(20, 20, 20);
-    pdf.text(`ID Number: ${id}`, cardW / 2, infoY + 5, { align: 'center' });
-    pdf.text(`Department: ${department}`, cardW / 2, infoY + 10, { align: 'center' });
-    pdf.text(`Phone: ${phone}`, cardW / 2, infoY + 15, { align: 'center' });
+    ctx.font = '500 32px Arial';
+    ctx.fillStyle = '#1C1C1C';
+    ctx.fillText(`ID: ${id}`, canvasSize / 2, textBaseY + 52);
+    ctx.fillText(`Department: ${department}`, canvasSize / 2, textBaseY + 100);
+    ctx.fillText(`Phone: ${phone}`, canvasSize / 2, textBaseY + 148);
 
-    pdf.save(`FereHaymanot_ID_${id.replace(/\//g, '_')}.pdf`);
+    const imageUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `FereHaymanot_ID_${id.replace(/\//g, '_')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
