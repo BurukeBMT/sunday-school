@@ -4,7 +4,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
-import jsPDF from 'jspdf';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,46 +46,8 @@ async function startServer() {
 
       for (const student of students) {
         const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
-        const qrUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
-
-        const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] });
-
-        // Logo - read file
-        let logoDataUrl;
-        try {
-          const logoBuffer = await fs.readFile(PathMod.join(__dirname, '../logo.jpg'));
-          const base64 = logoBuffer.toString('base64');
-          logoDataUrl = `data:image/jpeg;base64,${base64}`;
-          pdf.addImage(logoDataUrl, 'JPEG', 2, 2, 81.6, 49.98, undefined, 'FAST');
-        } catch {
-          pdf.setFillColor(245, 245, 220);
-          pdf.rect(0, 0, 85.6, 53.98, 'F');
-        }
-
-        // Pattern
-        pdf.setDrawColor(220, 220, 200);
-        for (let i = 0; i < 85.6; i += 5) pdf.line(i, 0, i, 53.98);
-
-        // Texts
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(8);
-        pdf.text('Sunday School ID Card', 42.8, 8, { align: 'center' });
-        pdf.setFont('courier', 'bold');
-        pdf.setFontSize(14);
-        pdf.text(student.id, 42.8, 22, { align: 'center' });
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
-        pdf.text(student.fullName, 42.8, 30, { align: 'center' });
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(7);
-        pdf.text(student.department, 42.8, 38, { align: 'center' });
-        pdf.text(student.phone, 42.8, 42, { align: 'center' });
-
-        // QR
-        pdf.addImage(qrUrl, 'PNG', 18, 35, 50, 50);
-
-        const pdfBuffer = pdf.output('arraybuffer') as ArrayBuffer;
-        zip.file(`SundaySchool_ID_${student.id.replace(/\//g, '_')}.pdf`, Buffer.from(pdfBuffer));
+        const qrBuffer = await QRCode.toBuffer(qrData, { type: 'png', width: 256, margin: 1 });
+        zip.file(`SundaySchool_ID_${student.id.replace(/\//g, '_')}.png`, qrBuffer);
       }
 
       const content = await zip.generateAsync({ type: 'nodebuffer' });

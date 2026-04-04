@@ -25,7 +25,8 @@ import { db } from '../firebase';
 import { Student, DEPARTMENTS } from '../types';
 import { cn } from '../lib/utils';
 import QRCode from 'qrcode';
-import jsPDF from 'jspdf';
+import JSZip from 'jszip';
+import { format } from 'date-fns';
 
 export const StudentList: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -53,77 +54,121 @@ export const StudentList: React.FC = () => {
     return matchesSearch && matchesDept;
   });
 
-  const downloadSingleQR = async (student: Student) => {
-    const { id, fullName, phone, department, qrToken } = student;
-    const qrData = JSON.stringify({ id, token: qrToken });
-    const qrUrl = await QRCode.toDataURL(qrData, { width: 256, margin: 1 });
+  const renderIdCardImage = async (student: Student, qrUrl: string): Promise<Blob> => {
+    const canvas = document.createElement('canvas');
+    const canvasWidth = 1500;
+    const canvasHeight = 950;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas context unavailable');
 
-    const pdf = new jsPDF({ unit: 'mm', format: [85.6, 53.98] }); // ID size
+    ctx.fillStyle = '#FCF9F2';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    // Logo
     try {
-      const logoRes = await fetch('/logo.jpg');
-      const logoBlob = await logoRes.blob();
-      const logoReader = new FileReader();
-      logoReader.readAsDataURL(logoBlob);
-      await new Promise(resolve => logoReader.onload = () => {
-        pdf.addImage(logoReader.result as string, 'JPEG', 2, 2, 81.6, 49.98, undefined, 'FAST');
-        resolve(null);
+      const template = new Image();
+      template.crossOrigin = 'anonymous';
+      template.src = '/logo.jpg';
+      await new Promise((resolve, reject) => {
+        template.onload = () => resolve(null);
+        template.onerror = reject;
       });
+      ctx.drawImage(template, 0, 0, canvasWidth, canvasHeight);
     } catch {
-      pdf.setFillColor(245, 245, 220);
-      pdf.rect(0, 0, 85.6, 53.98, 'F');
+      ctx.fillStyle = '#FCF9F2';
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     }
 
-    // Pattern bg
-    pdf.setDrawColor(220, 220, 200);
-    for (let i = 0; i < 85.6; i += 5) pdf.line(i, 0, i, 53.98);
+    const qrSize = 420;
+    const qrX = (canvasWidth - qrSize) / 2;
+    const qrY = 220;
+    const panelPadding = 48;
 
-    // Texts
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(8);
-    pdf.text('Sunday School ID Card', 42.8, 8, { align: 'center' });
-    pdf.setFont('courier', 'bold');
-    pdf.setFontSize(14);
-    pdf.text(id, 42.8, 22, { align: 'center' });
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.text(fullName, 42.8, 30, { align: 'center' });
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
-    pdf.text(department, 42.8, 38, { align: 'center' });
-    pdf.text(phone, 42.8, 42, { align: 'center' });
+    const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    };
 
-    // QR
+    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 36);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+    ctx.fill();
+    ctx.strokeStyle = '#CBA64E';
+    ctx.lineWidth = 14;
+    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 36);
+    ctx.stroke();
+
     const qrImg = new Image();
+    qrImg.crossOrigin = 'anonymous';
     qrImg.src = qrUrl;
-    await new Promise(resolve => {
-      qrImg.onload = () => {
-        pdf.addImage(qrImg, 'PNG', 18, 35, 50, 50);
-        resolve(null);
-      };
+    await new Promise((resolve, reject) => {
+      qrImg.onload = () => resolve(null);
+      qrImg.onerror = reject;
     });
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-    pdf.save(`SundaySchool_ID_${id.replace(/\//g, '_')}.pdf`);
+    const textBaseY = qrY + qrSize + 96;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#0F1917';
+    ctx.font = '700 54px Arial';
+    ctx.fillText(student.fullName, canvasWidth / 2, textBaseY);
+
+    ctx.font = '500 38px Arial';
+    ctx.fillStyle = '#1C1C1C';
+    ctx.fillText(`ID Number: ${student.id}`, canvasWidth / 2, textBaseY + 72);
+    ctx.fillText(`Department: ${student.department}`, canvasWidth / 2, textBaseY + 128);
+    ctx.fillText(`Phone: ${student.phone}`, canvasWidth / 2, textBaseY + 184);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return reject(new Error('Failed to create image'));
+        resolve(blob);
+      }, 'image/png');
+    });
+  };
+
+  const downloadSingleQR = async (student: Student) => {
+    const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
+    const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
+    const blob = await renderIdCardImage(student, qrUrl);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SundaySchool_ID_${student.id.replace(/\//g, '_')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const downloadBulkQR = async () => {
     setDownloading(true);
     try {
-      const response = await fetch('/api/bulk-id', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ students: filteredStudents.map(s => ({ id: s.id, fullName: s.fullName, qrToken: s.qrToken, department: s.department, phone: s.phone })) })
-      });
-
-      if (!response.ok) throw new Error('Failed to generate ZIP');
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const zip = new JSZip();
+      for (const student of filteredStudents) {
+        const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
+        const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
+        const blob = await renderIdCardImage(student, qrUrl);
+        zip.file(`SundaySchool_ID_${student.id.replace(/\//g, '_')}.png`, blob);
+      }
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
       const link = document.createElement('a');
       link.href = url;
       link.download = `sunday_school_ids_${format(new Date(), 'yyyyMMdd')}.zip`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (err) {
       alert('Failed to download bulk IDs. Please try again.');
     } finally {
@@ -243,10 +288,3 @@ export const StudentList: React.FC = () => {
     </div>
   );
 };
-
-function format(date: Date, pattern: string) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return pattern.replace('yyyy', String(y)).replace('MM', m).replace('dd', d);
-}
