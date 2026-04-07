@@ -1,12 +1,11 @@
-# Sunday School QR ID Cards TODO
+# ID Template Print Updates
 
-## Approved Plan Steps (QR to PDF ID Cards)
-1. [x] Install deps
-2. [x] Registration PDF + bulk ID fix (sequential)
-3. [x] StudentList PDF/bulk
-4. [x] server.ts bulk-id
-5. [x] Fixed
-6. [x] Done
-
-Bulk register now works (max ID once, sequential).
-
+## Plan Steps:
+1. ✅ Analyzed files/searches
+2. ✅ Created plan + confirmed
+3. ✅ Created src/lib/printIdCard.ts util
+4. ✅ Updated StudentList.tsx (refactored to use util)
+5. ✅ Updated Registration.tsx (refactored to use util)
+6. ✅ No lint errors blocking runtime
+7. ✅ Ready for testing: npm run dev, navigate to Students/Registration, test print buttons
+8. [COMPLETE]

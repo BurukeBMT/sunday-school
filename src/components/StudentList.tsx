@@ -24,8 +24,8 @@ import {
 import { db } from '../firebase';
 import { Student, DEPARTMENTS } from '../types';
 import { cn } from '../lib/utils';
-import QRCode from 'qrcode';
 import JSZip from 'jszip';
+import { printIdCard } from '../lib/printIdCard';
 import { format } from 'date-fns';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -56,74 +56,10 @@ export const StudentList: React.FC = () => {
     return matchesSearch && matchesDept;
   });
 
-  const renderIdCardImage = async (student: Student, qrUrl: string): Promise<Blob> => {
-    const canvas = document.createElement('canvas');
-    const canvasWidth = 1500;
-    const canvasHeight = 950;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas context unavailable');
 
-    // Load the ID template image
-    const templateImg = new Image();
-    templateImg.crossOrigin = 'anonymous';
-    templateImg.src = '/id template.png';
-    await new Promise((resolve, reject) => {
-      templateImg.onload = () => resolve(null);
-      templateImg.onerror = reject;
-    });
-
-    // Draw the template as background
-    ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
-
-    // Add QR code overlay
-    const qrSize = 350;
-    const qrX = canvasWidth - qrSize - 100; // Position QR code on the right side
-    const qrY = 300;
-
-    // Add semi-transparent background for QR code
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
-
-    const qrImg = new Image();
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.src = qrUrl;
-    await new Promise((resolve, reject) => {
-      qrImg.onload = () => resolve(null);
-      qrImg.onerror = reject;
-    });
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-    // Add student information text overlay
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'left';
-    ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
-
-    // Position text elements (adjust coordinates based on template design)
-    const textX = 120;
-    let textY = 350;
-
-    ctx.fillText(`Name: ${student.fullName}`, textX, textY);
-    textY += 60;
-    ctx.fillText(`ID: ${student.id}`, textX, textY);
-    textY += 60;
-    ctx.fillText(`Department: ${student.department}`, textX, textY);
-    textY += 60;
-    ctx.fillText(`Phone: ${student.phone}`, textX, textY);
-
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) return reject(new Error('Failed to create image'));
-        resolve(blob);
-      }, 'image/png');
-    });
-  };
 
   const downloadSingleQR = async (student: Student) => {
-    const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
-    const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
-    const blob = await renderIdCardImage(student, qrUrl);
+    const blob = await printIdCard(student);
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -139,9 +75,7 @@ export const StudentList: React.FC = () => {
     try {
       const zip = new JSZip();
       for (const student of filteredStudents) {
-        const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
-        const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
-        const blob = await renderIdCardImage(student, qrUrl);
+        const blob = await printIdCard(student);
         zip.file(`SundaySchool_ID_${student.id.replace(/\//g, '_')}.png`, blob);
       }
       const content = await zip.generateAsync({ type: 'blob' });

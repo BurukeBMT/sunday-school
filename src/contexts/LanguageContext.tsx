@@ -180,7 +180,7 @@ const translations: Record<Language, Translations> = {
 
         // Dashboard
         dashboardOverview: 'Dashboard Overview',
-        welcomeBack: 'Welcome back to Fre Haimanot Attendance System',
+        welcomeBack: 'Welcome back to Fre-Haymanot Attendance System',
         totalStudents: 'Total Students',
         todayAttendance: 'Today Attendance',
         activeCourses: 'Active Courses',

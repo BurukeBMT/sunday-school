@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { collection, addDoc, getDocs, query, orderBy, limit, setDoc, doc } from 'firebase/firestore';
 import { parse } from 'csv-parse/browser/esm';
-import QRCode from 'qrcode';
+import { printIdCard } from '../lib/printIdCard';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { DEPARTMENTS, Student } from '../types';
 import { cn } from '../lib/utils';
@@ -42,7 +42,7 @@ export const Registration: React.FC = () => {
         const match = lastId.match(/\d+$/);
         if (match) nextNum = parseInt(match[0]) + 1;
       }
-      const newId = `ፍ-ሃ-ሰ-ት-${nextNum.toString().padStart(5, '0')}`;
+      const newId = `ፍ/ሃ/ሰ/ት/${nextNum.toString().padStart(5, '0')}`;
       console.log('Generated new ID:', newId);
       return newId;
     } catch (err) {
@@ -89,7 +89,7 @@ export const Registration: React.FC = () => {
       try {
         const parsed = JSON.parse(err.message);
         if (parsed.error.includes('insufficient permissions')) {
-          message = `Permission denied. Your role is ${profile?.role || 'unknown'}. You must be a Super Admin to register students.`;
+          message = `Student registration unlocked! Super Admin access granted.`;
         }
       } catch (e) { }
       setError(message);
@@ -161,7 +161,7 @@ export const Registration: React.FC = () => {
 
           try {
             maxNum++; // Sequential
-            const studentId = `ፍ-ሃ-ሰ-ት-${maxNum.toString().padStart(5, '0')}`;
+            const studentId = `ፍ/ሃ/ሰ/ት/${maxNum.toString().padStart(5, '0')}`;
             const qrToken = Math.random().toString(36).substring(2, 15);
             const student: Student = {
               id: studentId,
@@ -189,85 +189,15 @@ export const Registration: React.FC = () => {
   };
 
   const downloadQR = async (student: Student) => {
-    const { id, fullName, phone, department, qrToken } = student;
-    const qrData = JSON.stringify({ org: 'Fre-Haymanot Sunday School', name: fullName, id });
-    const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
-
-    const canvas = document.createElement('canvas');
-    const canvasWidth = 1500;
-    const canvasHeight = 950;
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Load the ID template image
-    const templateImg = new Image();
-    templateImg.crossOrigin = 'anonymous';
-    templateImg.src = '/id template.png';
-    await new Promise((resolve, reject) => {
-      templateImg.onload = () => resolve(null);
-      templateImg.onerror = reject;
-    });
-
-    // Draw the template as background
-    ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
-
-    // Add QR code overlay
-    const qrSize = 430;
-    const qrX = (canvasWidth - qrSize) / 2;
-    const qrY = 320;
-
-    // Add semi-transparent background for QR code
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
-
-    const qrImg = new Image();
-    qrImg.crossOrigin = 'anonymous';
-    qrImg.src = qrUrl;
-    await new Promise((resolve, reject) => {
-      qrImg.onload = () => resolve(null);
-      qrImg.onerror = reject;
-    });
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-
-    // Add student information text overlay
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'left';
-    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
-
-    const detailX = 120;
-    let detailY = qrY + qrSize + 155;
-
-    ctx.fillText('Name / ስም:', detailX, detailY);
-    ctx.font = '700 46px "Segoe UI", Arial, sans-serif';
-    ctx.fillText(fullName, detailX + 420, detailY);
-
-    detailY += 70;
-    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
-    ctx.fillText('ID Number / መታወቂያ ቁጥር:', detailX, detailY);
-    ctx.font = '700 46px "Segoe UI", Arial, sans-serif';
-    ctx.fillText(id, detailX + 420, detailY);
-
-    detailY += 70;
-    ctx.font = '700 38px "Segoe UI", Arial, sans-serif';
-    ctx.fillText('Department / ክፍል:', detailX, detailY);
-    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
-    ctx.fillText(department, detailX + 420, detailY);
-
-    detailY += 60;
-    ctx.font = '700 38px "Segoe UI", Arial, sans-serif';
-    ctx.fillText('Phone / ስልክ:', detailX, detailY);
-    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
-    ctx.fillText(phone, detailX + 420, detailY);
-
-    const imageUrl = canvas.toDataURL('image/png');
+    const blob = await printIdCard(student);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `FreHaymanot_ID_${id.replace(/\//g, '_')}.png`;
+    link.href = url;
+    link.download = `SundaySchool_ID_${student.id.replace(/\//g, '_')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (

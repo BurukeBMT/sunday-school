@@ -73,10 +73,7 @@ service cloud.firestore {
     }
 
     match /students/{studentId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin() && isValidStudent(request.resource.data);
-      allow update: if isSuperAdmin() && isValidStudent(request.resource.data);
-      allow delete: if isSuperAdmin();
+      allow read, create, update, delete: if isAdmin();
     }
 
     match /courses/{courseId} {

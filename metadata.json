@@ -1,6 +1,6 @@
 {
   "name": "ፍሬ ሃይማኖት ሰ/ት/ቤት አቴንዳንስ ሲስተም",
-  "description": "QR-based Attendance Management System for Fre Haimanot Sunday School.",
+  "description": "QR-based Attendance Management System for Fre-Haymanot Sunday School.",
   "requestFramePermissions": [
     "camera"
   ]
