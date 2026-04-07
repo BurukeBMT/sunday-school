@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  getDocs, 
-  where, 
-  orderBy, 
+import {
+  collection,
+  query,
+  getDocs,
+  where,
+  orderBy,
   limit,
   onSnapshot
 } from 'firebase/firestore';
-import { 
-  Users, 
-  CheckCircle, 
-  AlertTriangle, 
+import {
+  Users,
+  CheckCircle,
+  AlertTriangle,
   Calendar,
   TrendingUp,
   TrendingDown
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   Cell,
   PieChart,
@@ -32,6 +32,7 @@ import { db } from '../firebase';
 import { Student, AttendanceLog, DEPARTMENTS } from '../types';
 import { format, subDays, startOfDay } from 'date-fns';
 import { cn } from '../lib/utils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const Dashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -43,12 +44,13 @@ export const Dashboard: React.FC = () => {
   const [deptData, setDeptData] = useState<any[]>([]);
   const [dailyData, setDailyData] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<AttendanceLog[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Real-time stats
     const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
       setStats(prev => ({ ...prev, totalStudents: snap.size }));
-      
+
       const counts = DEPARTMENTS.map(dept => ({
         name: dept,
         value: snap.docs.filter(d => d.data().department === dept).length
@@ -102,17 +104,17 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Dashboard Overview</h1>
-        <p className="text-gray-500">Welcome back to Fre Haimanot Attendance System</p>
+        <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">{t.dashboardOverview}</h1>
+        <p className="text-gray-500">{t.welcomeBack}</p>
       </header>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Students', value: stats.totalStudents, icon: Users, color: 'bg-blue-50 text-blue-600' },
-          { label: 'Today Attendance', value: stats.todayAttendance, icon: CheckCircle, color: 'bg-green-50 text-green-600' },
-          { label: 'Active Courses', value: stats.activeCourses, icon: Calendar, color: 'bg-purple-50 text-purple-600' },
-          { label: 'Absence Alerts', value: stats.absenteeAlerts, icon: AlertTriangle, color: 'bg-red-50 text-red-600' },
+          { label: t.totalStudents, value: stats.totalStudents, icon: Users, color: 'bg-blue-50 text-blue-600' },
+          { label: t.todayAttendance, value: stats.todayAttendance, icon: CheckCircle, color: 'bg-green-50 text-green-600' },
+          { label: t.activeCourses, value: stats.activeCourses, icon: Calendar, color: 'bg-purple-50 text-purple-600' },
+          { label: t.absenceAlerts, value: stats.absenteeAlerts, icon: AlertTriangle, color: 'bg-red-50 text-red-600' },
         ].map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 flex items-center gap-4">
             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center", stat.color)}>
@@ -130,9 +132,9 @@ export const Dashboard: React.FC = () => {
         {/* Attendance Trend */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="font-serif font-bold text-xl">Attendance Trends</h3>
+            <h3 className="font-serif font-bold text-xl">{t.attendanceTrends}</h3>
             <span className="text-xs font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full flex items-center gap-1">
-              <TrendingUp size={14} /> +12% this week
+              <TrendingUp size={14} /> {t.thisWeek}
             </span>
           </div>
           <div className="h-[300px] w-full" style={{ minWidth: 0 }}>
@@ -141,7 +143,7 @@ export const Dashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8E9299' }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#8E9299' }} />
-                <Tooltip 
+                <Tooltip
                   cursor={{ fill: '#f5f5f0' }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                 />
@@ -153,7 +155,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Department Distribution */}
         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
-          <h3 className="font-serif font-bold text-xl mb-8">By Department</h3>
+          <h3 className="font-serif font-bold text-xl mb-8">{t.departmentDistribution}</h3>
           <div className="h-[300px] w-full" style={{ minWidth: 0 }}>
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>

@@ -1,26 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  addDoc, 
-  doc, 
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  doc,
   getDoc,
-  serverTimestamp 
+  serverTimestamp
 } from 'firebase/firestore';
-import { 
-  QrCode, 
-  CheckCircle2, 
-  XCircle, 
-  Loader2, 
+import {
+  QrCode,
+  CheckCircle2,
+  XCircle,
+  Loader2,
   Camera,
   BookOpen,
   AlertCircle
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Course, AttendanceLog } from '../types';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +29,7 @@ import { cn } from '../lib/utils';
 
 export const Scanner: React.FC = () => {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [scanning, setScanning] = useState(false);
@@ -38,10 +40,10 @@ export const Scanner: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const q = profile?.role === 'super_admin' 
+        const q = profile?.role === 'super_admin'
           ? query(collection(db, 'courses'))
           : query(collection(db, 'courses'), where('adminIds', 'array-contains', profile?.uid));
-        
+
         const snap = await getDocs(q);
         const courseList = snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
         setCourses(courseList);
@@ -61,8 +63,8 @@ export const Scanner: React.FC = () => {
     setTimeout(() => {
       scannerRef.current = new Html5QrcodeScanner(
         "reader",
-        { 
-          fps: 10, 
+        {
+          fps: 10,
           qrbox: { width: 250, height: 250 },
           formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
         },
@@ -98,7 +100,7 @@ export const Scanner: React.FC = () => {
       }
 
       if (!studentDoc || !studentDoc.exists() || studentDoc.data().qrToken !== token) {
-        setResult({ success: false, message: 'Invalid QR Code or Student ID' });
+        setResult({ success: false, message: t.invalidQrCode });
         setLoading(false);
         return;
       }
@@ -121,17 +123,14 @@ export const Scanner: React.FC = () => {
       }
 
       if (duplicateSnap && !duplicateSnap.empty) {
-        setResult({ 
-          success: false, 
-          message: 'Attendance already recorded for today',
-          studentName: studentData.fullName 
+        setResult({
+          success: false,
+          message: t.attendanceAlreadyRecorded,
+          studentName: studentData.fullName
         });
         setLoading(false);
         return;
       }
-
-      // 3. Record Attendance
-      const course = courses.find(c => c.id === selectedCourse);
       try {
         await addDoc(collection(db, 'attendance_logs'), {
           studentId: id,
@@ -146,13 +145,13 @@ export const Scanner: React.FC = () => {
         handleFirestoreError(err, OperationType.WRITE, 'attendance_logs');
       }
 
-      setResult({ 
-        success: true, 
-        message: 'Attendance recorded successfully',
-        studentName: studentData.fullName 
+      setResult({
+        success: true,
+        message: t.attendanceRecorded,
+        studentName: studentData.fullName
       });
     } catch (err) {
-      setResult({ success: false, message: 'Invalid QR Code format' });
+      setResult({ success: false, message: t.invalidQrCode });
     } finally {
       setLoading(false);
     }
@@ -165,21 +164,21 @@ export const Scanner: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <header>
-        <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Attendance Scanner</h1>
-        <p className="text-gray-500">Scan student QR codes to record attendance</p>
+        <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">{t.attendanceScanner}</h1>
+        <p className="text-gray-500">{t.scanStudentQrs}</p>
       </header>
 
       <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100 space-y-8">
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Select Course</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.selectCourse}</label>
           {courses.length === 0 ? (
             <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 text-sm flex items-center gap-3">
               <AlertCircle size={20} />
-              <span>No courses found. Please create a course in "Course Management" first.</span>
+              <span>{t.noCoursesFound} {t.createCourseFirst}</span>
             </div>
           ) : (
             <div className="relative">
-              <select 
+              <select
                 disabled={scanning}
                 value={selectedCourse}
                 onChange={e => setSelectedCourse(e.target.value)}
@@ -202,7 +201,7 @@ export const Scanner: React.FC = () => {
                 <p>Waiting for courses...</p>
               </div>
             ) : !scanning ? (
-              <motion.div 
+              <motion.div
                 key="start"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -212,7 +211,7 @@ export const Scanner: React.FC = () => {
                 <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Camera className="text-white w-10 h-10" />
                 </div>
-                <button 
+                <button
                   onClick={startScanner}
                   className="bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] transition-all shadow-xl"
                 >
@@ -220,14 +219,14 @@ export const Scanner: React.FC = () => {
                 </button>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 key="reader"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="w-full h-full"
               >
                 <div id="reader" className="w-full h-full" />
-                <button 
+                <button
                   onClick={stopScanner}
                   className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg"
                 >
@@ -245,7 +244,7 @@ export const Scanner: React.FC = () => {
         </div>
 
         {result && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
@@ -258,7 +257,7 @@ export const Scanner: React.FC = () => {
               <p className="font-bold">{result.message}</p>
               {result.studentName && <p className="text-sm opacity-80">{result.studentName}</p>}
             </div>
-            <button 
+            <button
               onClick={() => { setResult(null); startScanner(); }}
               className="ml-auto bg-white/50 px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/80 transition-colors"
             >

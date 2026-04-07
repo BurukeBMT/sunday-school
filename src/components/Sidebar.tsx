@@ -13,6 +13,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from './LanguageSelector';
 import { cn } from '../lib/utils';
 
 interface SidebarProps {
@@ -24,16 +26,17 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
   const { profile, logout } = useAuth();
+  const { t } = useLanguage();
   const isSuperAdmin = profile?.role === 'super_admin';
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'registration', label: 'Registration', icon: UserPlus, hidden: !isSuperAdmin },
-    { id: 'students', label: 'Students', icon: Users, hidden: !isSuperAdmin },
-    { id: 'courses', label: 'Courses', icon: BookOpen, hidden: !isSuperAdmin },
-    { id: 'admins', label: 'Admin Management', icon: ShieldCheck, hidden: !isSuperAdmin },
-    { id: 'scanner', label: 'Scanner', icon: QrCode },
-    { id: 'logs', label: 'Attendance Logs', icon: ClipboardList },
+    { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
+    { id: 'registration', label: t.registration, icon: UserPlus, hidden: !isSuperAdmin },
+    { id: 'students', label: t.students, icon: Users, hidden: !isSuperAdmin },
+    { id: 'courses', label: t.courses, icon: BookOpen, hidden: !isSuperAdmin },
+    { id: 'admins', label: t.admins, icon: ShieldCheck, hidden: !isSuperAdmin },
+    { id: 'scanner', label: t.scanner, icon: QrCode },
+    { id: 'logs', label: t.logs, icon: ClipboardList },
   ];
 
   return (
@@ -106,6 +109,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 </p>
               </div>
             </div>
+
+            <div className="mb-4 px-2">
+              <LanguageSelector />
+            </div>
+
             <button
               onClick={logout}
               className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-colors"

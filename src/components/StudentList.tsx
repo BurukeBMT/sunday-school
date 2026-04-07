@@ -27,6 +27,7 @@ import { cn } from '../lib/utils';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
 import { format } from 'date-fns';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const StudentList: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -34,6 +35,7 @@ export const StudentList: React.FC = () => {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
   const [downloading, setDownloading] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -63,113 +65,26 @@ export const StudentList: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
 
-    const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + w - r, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-      ctx.lineTo(x + w, y + h - r);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      ctx.lineTo(x + r, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
-    };
+    // Load the ID template image
+    const templateImg = new Image();
+    templateImg.crossOrigin = 'anonymous';
+    templateImg.src = '/id template.png';
+    await new Promise((resolve, reject) => {
+      templateImg.onload = () => resolve(null);
+      templateImg.onerror = reject;
+    });
 
-    const drawWheatIcon = (x: number, y: number, scale: number) => {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(scale, scale);
-      ctx.strokeStyle = '#7A6A3F';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, 90);
-      ctx.stroke();
-      const leafPositions = [-30, -18, -6, 6, 18, 30];
-      leafPositions.forEach((offset, index) => {
-        ctx.beginPath();
-        ctx.ellipse(offset, 20 + index * 10, 12, 18, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#D9B966';
-        ctx.fill();
-        ctx.stroke();
-      });
-      ctx.restore();
-    };
+    // Draw the template as background
+    ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
 
-    const drawGrapesIcon = (x: number, y: number, scale: number) => {
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(scale, scale);
-      ctx.fillStyle = '#7E2F6B';
-      for (let row = 0; row < 3; row += 1) {
-        for (let col = 0; col < 3 - row; col += 1) {
-          ctx.beginPath();
-          ctx.arc(col * 26 - row * 12, row * 30, 18, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-      ctx.fillStyle = '#4A2D30';
-      ctx.beginPath();
-      ctx.moveTo(-26, -8);
-      ctx.lineTo(0, -64);
-      ctx.lineTo(10, -58);
-      ctx.lineTo(-18, -14);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    };
+    // Add QR code overlay
+    const qrSize = 350;
+    const qrX = canvasWidth - qrSize - 100; // Position QR code on the right side
+    const qrY = 300;
 
-    ctx.fillStyle = '#E6EEE3';
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    drawRoundedRect(28, 28, canvasWidth - 56, canvasHeight - 56, 60);
-    ctx.fillStyle = '#F8F3E6';
-    ctx.fill();
-    ctx.lineWidth = 18;
-    ctx.strokeStyle = '#5A6B4D';
-    drawRoundedRect(18, 18, canvasWidth - 36, canvasHeight - 36, 72);
-    ctx.stroke();
-
-    const headerHeight = 240;
-    drawRoundedRect(60, 60, canvasWidth - 120, headerHeight, 44);
-    ctx.fillStyle = '#FFF8EE';
-    ctx.fill();
-    ctx.strokeStyle = '#C9A75C';
-    ctx.lineWidth = 10;
-    drawRoundedRect(60, 60, canvasWidth - 120, headerHeight, 44);
-    ctx.stroke();
-
-    ctx.fillStyle = '#3F4B2F';
-    ctx.font = '800 58px "Segoe UI", Arial, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('ፈረ የሕይማኖት ሰ/ቤት', canvasWidth / 2, 160);
-    ctx.font = '600 40px "Segoe UI", Arial, sans-serif';
-    ctx.fillText('Fere Haymanot Sunday School', canvasWidth / 2, 212);
-
-    ctx.strokeStyle = '#5A6B4D';
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.moveTo(140, 265);
-    ctx.lineTo(canvasWidth - 140, 265);
-    ctx.stroke();
-
-    drawWheatIcon(130, 120, 1.3);
-    drawGrapesIcon(canvasWidth - 160, 120, 1.3);
-
-    const qrSize = 420;
-    const qrX = (canvasWidth - qrSize) / 2;
-    const qrY = 320;
-    const panelPadding = 40;
-
-    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 42);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.fill();
-    ctx.strokeStyle = '#C9A75C';
-    ctx.lineWidth = 16;
-    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 42);
-    ctx.stroke();
+    // Add semi-transparent background for QR code
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
 
     const qrImg = new Image();
     qrImg.crossOrigin = 'anonymous';
@@ -180,21 +95,22 @@ export const StudentList: React.FC = () => {
     });
     ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-    const textBaseY = qrY + qrSize + 94;
-    ctx.fillStyle = '#312F26';
-    ctx.font = '700 50px "Segoe UI", Arial, sans-serif';
-    ctx.fillText(student.fullName, canvasWidth / 2, textBaseY);
+    // Add student information text overlay
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
 
-    ctx.font = '600 36px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#3E3A2F';
-    ctx.fillText(`Name: ${student.fullName}`, canvasWidth / 2, textBaseY + 80);
-    ctx.fillText(`ID Number: ${student.id}`, canvasWidth / 2, textBaseY + 140);
-    ctx.fillText(`Department: ${student.department}`, canvasWidth / 2, textBaseY + 200);
-    ctx.fillText(`Phone: ${student.phone}`, canvasWidth / 2, textBaseY + 260);
+    // Position text elements (adjust coordinates based on template design)
+    const textX = 120;
+    let textY = 350;
 
-    ctx.fillStyle = '#5A6B4D';
-    ctx.font = '600 32px "Segoe UI", Arial, sans-serif';
-    ctx.fillText('ፈረ የሕይማኖት ሰ/ቤት', canvasWidth / 2, canvasHeight - 60);
+    ctx.fillText(`Name: ${student.fullName}`, textX, textY);
+    textY += 60;
+    ctx.fillText(`ID: ${student.id}`, textX, textY);
+    textY += 60;
+    ctx.fillText(`Department: ${student.department}`, textX, textY);
+    textY += 60;
+    ctx.fillText(`Phone: ${student.phone}`, textX, textY);
 
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
@@ -254,8 +170,8 @@ export const StudentList: React.FC = () => {
     <div className="space-y-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Student Directory</h1>
-          <p className="text-gray-500">Manage and view all registered students</p>
+          <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">{t.students}</h1>
+          <p className="text-gray-500">{t.manageStudents}</p>
         </div>
         <button
           onClick={downloadBulkQR}
@@ -263,7 +179,7 @@ export const StudentList: React.FC = () => {
           className="flex items-center justify-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20 disabled:opacity-50"
         >
           {downloading ? <Loader2 className="animate-spin" size={18} /> : <FileArchive size={18} />}
-          Download Bulk IDs ({filteredStudents.length})
+          {t.downloadBulkIds} ({filteredStudents.length})
         </button>
       </header>
 
@@ -273,7 +189,7 @@ export const StudentList: React.FC = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="Search by name, ID, or phone..."
+            placeholder={t.searchByNameIdPhone}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
@@ -286,7 +202,7 @@ export const StudentList: React.FC = () => {
             onChange={e => setDeptFilter(e.target.value)}
             className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10"
           >
-            <option value="All">All Departments</option>
+            <option value="All">{t.allDepartments}</option>
             {DEPARTMENTS.map(dept => <option key={dept} value={dept}>{dept}</option>)}
           </select>
         </div>
@@ -298,11 +214,11 @@ export const StudentList: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50/50 border-bottom border-gray-100">
-                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Student ID</th>
-                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</th>
-                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Department</th>
-                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Phone</th>
-                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400 text-right">Actions</th>
+                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">{t.studentId}</th>
+                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">{t.fullName}</th>
+                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">{t.department}</th>
+                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">{t.phone}</th>
+                <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400 text-right">{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -310,13 +226,13 @@ export const StudentList: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="px-8 py-12 text-center text-gray-400">
                     <Loader2 className="animate-spin mx-auto mb-2" size={24} />
-                    Loading students...
+                    {t.loading}
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-8 py-12 text-center text-gray-400">
-                    No students found matching your criteria.
+                    {t.noStudentsFound}
                   </td>
                 </tr>
               ) : filteredStudents.map((student) => (
@@ -334,14 +250,14 @@ export const StudentList: React.FC = () => {
                       <button
                         onClick={() => downloadSingleQR(student)}
                         className="p-2 text-olive-600 hover:bg-olive-50 rounded-lg transition-colors"
-                        title="Download QR"
+                        title={t.downloadQr}
                       >
                         <QrCode size={18} />
                       </button>
                       <button
                         onClick={() => deleteStudent(student.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Student"
+                        title={t.deleteStudent}
                       >
                         <Trash2 size={18} />
                       </button>

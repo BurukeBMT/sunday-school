@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  getDocs, 
-  orderBy, 
-  where, 
+import {
+  collection,
+  query,
+  getDocs,
+  orderBy,
+  where,
   onSnapshot,
   limit
 } from 'firebase/firestore';
-import { 
-  Search, 
-  Download, 
+import {
+  Search,
+  Download,
   Filter,
   Calendar,
   BookOpen,
@@ -23,6 +23,7 @@ import { db } from '../firebase';
 import { AttendanceLog, Course, Student, DEPARTMENTS } from '../types';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const AttendanceLogs: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -32,6 +33,7 @@ export const AttendanceLogs: React.FC = () => {
   const [dateFilter, setDateFilter] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [courseFilter, setCourseFilter] = useState('All');
   const [deptFilter, setDeptFilter] = useState('All');
+  const { t } = useLanguage();
 
   useEffect(() => {
     // Fetch courses for filter
@@ -58,7 +60,7 @@ export const AttendanceLogs: React.FC = () => {
     // Use a simpler query that doesn't require composite indexes initially
     // We'll filter and sort in memory if needed, or use a basic query
     let q = query(collection(db, 'attendance_logs'), orderBy('date', 'desc'), limit(100));
-    
+
     if (dateFilter) {
       q = query(collection(db, 'attendance_logs'), where('date', '==', dateFilter));
     }
@@ -97,7 +99,7 @@ export const AttendanceLogs: React.FC = () => {
       courses.find(c => c.id === log.courseId)?.name || 'Unknown',
       log.department
     ]);
-    
+
     const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -111,25 +113,25 @@ export const AttendanceLogs: React.FC = () => {
     <div className="space-y-8">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Attendance Logs</h1>
-          <p className="text-gray-500">View and export attendance history</p>
+          <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">{t.attendanceLogs}</h1>
+          <p className="text-gray-500">{t.viewAndExportAttendance}</p>
         </div>
-        <button 
+        <button
           onClick={exportToCSV}
           disabled={filteredLogs.length === 0}
           className="flex items-center justify-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20 disabled:opacity-50"
         >
-          <FileSpreadsheet size={18} /> Export CSV
+          <FileSpreadsheet size={18} /> {t.exportCsv}
         </button>
       </header>
 
       {/* Filters */}
       <div className="bg-white p-6 rounded-[24px] shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Date</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.date}</label>
           <div className="relative">
             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
+            <input
               type="date"
               value={dateFilter}
               onChange={e => setDateFilter(e.target.value)}
@@ -138,15 +140,15 @@ export const AttendanceLogs: React.FC = () => {
           </div>
         </div>
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Course</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.course}</label>
           <div className="relative">
             <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <select 
+            <select
               value={courseFilter}
               onChange={e => setCourseFilter(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none appearance-none"
             >
-              <option value="All">All Courses</option>
+              <option value="All">{t.allCourses}</option>
               {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
@@ -155,7 +157,7 @@ export const AttendanceLogs: React.FC = () => {
           <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Department</label>
           <div className="relative">
             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <select 
+            <select
               value={deptFilter}
               onChange={e => setDeptFilter(e.target.value)}
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none appearance-none"

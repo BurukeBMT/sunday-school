@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -54,7 +55,7 @@ const AppContent: React.FC = () => {
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between mb-8 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">
-            <img src="/logo.jpg" alt="Fere Haymanot logo" className="w-8 h-8 rounded-lg object-cover" />
+            <img src="/logo.jpg" alt="Fre-Haymanot logo" className="w-8 h-8 rounded-lg object-cover" />
             <h2 className="font-serif font-bold">ፍሬ ሃይማኖት ሰ/ት/ቤት አቴንዳንስ</h2>
           </div>
           <button
@@ -76,7 +77,9 @@ const AppContent: React.FC = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
     </AuthProvider>
   );
 }

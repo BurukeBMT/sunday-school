@@ -17,9 +17,11 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { DEPARTMENTS, Student } from '../types';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const Registration: React.FC = () => {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [form, setForm] = useState({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0] });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<Student | null>(null);
@@ -188,7 +190,7 @@ export const Registration: React.FC = () => {
 
   const downloadQR = async (student: Student) => {
     const { id, fullName, phone, department, qrToken } = student;
-    const qrData = JSON.stringify({ org: 'Fere Haymanot Sunday School', name: fullName, id });
+    const qrData = JSON.stringify({ org: 'Fre-Haymanot Sunday School', name: fullName, id });
     const qrUrl = await QRCode.toDataURL(qrData, { width: 512, margin: 1 });
 
     const canvas = document.createElement('canvas');
@@ -199,51 +201,26 @@ export const Registration: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.lineTo(x + w - r, y);
-      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-      ctx.lineTo(x + w, y + h - r);
-      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-      ctx.lineTo(x + r, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
-    };
+    // Load the ID template image
+    const templateImg = new Image();
+    templateImg.crossOrigin = 'anonymous';
+    templateImg.src = '/id template.png';
+    await new Promise((resolve, reject) => {
+      templateImg.onload = () => resolve(null);
+      templateImg.onerror = reject;
+    });
 
-    // Draw the provided template as the card background
-    ctx.fillStyle = '#FCF9F2';
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    // Draw the template as background
+    ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
 
-    try {
-      const templateImg = new Image();
-      templateImg.crossOrigin = 'anonymous';
-      templateImg.src = '/logo.jpg';
-      await new Promise((resolve, reject) => {
-        templateImg.onload = () => resolve(null);
-        templateImg.onerror = reject;
-      });
-      ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
-    } catch (e) {
-      // Fallback if template cannot load
-      ctx.fillStyle = '#FCF9F2';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    }
-
-    const qrSize = canvasWidth * 0.28;
+    // Add QR code overlay
+    const qrSize = 430;
     const qrX = (canvasWidth - qrSize) / 2;
-    const qrY = canvasHeight * 0.28;
+    const qrY = 320;
 
-    const panelMargin = 40;
-    drawRoundedRect(qrX - panelMargin, qrY - panelMargin, qrSize + panelMargin * 2, qrSize + panelMargin * 2, 40);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-    ctx.fill();
-    ctx.strokeStyle = '#CBA64E';
-    ctx.lineWidth = 12;
-    drawRoundedRect(qrX - panelMargin, qrY - panelMargin, qrSize + panelMargin * 2, qrSize + panelMargin * 2, 40);
-    ctx.stroke();
+    // Add semi-transparent background for QR code
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(qrX - 20, qrY - 20, qrSize + 40, qrSize + 40);
 
     const qrImg = new Image();
     qrImg.crossOrigin = 'anonymous';
@@ -254,22 +231,40 @@ export const Registration: React.FC = () => {
     });
     ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-    const textBaseY = qrY + qrSize + 90;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#0F1917';
-    ctx.font = '700 44px Arial';
-    ctx.fillText(fullName, canvasWidth / 2, textBaseY);
+    // Add student information text overlay
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'left';
+    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
 
-    ctx.font = '500 36px Arial';
-    ctx.fillStyle = '#1C1C1C';
-    ctx.fillText(`ID Number: ${id}`, canvasWidth / 2, textBaseY + 62);
-    ctx.fillText(`Department: ${department}`, canvasWidth / 2, textBaseY + 116);
-    ctx.fillText(`Phone: ${phone}`, canvasWidth / 2, textBaseY + 170);
+    const detailX = 120;
+    let detailY = qrY + qrSize + 155;
+
+    ctx.fillText('Name / ስም:', detailX, detailY);
+    ctx.font = '700 46px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(fullName, detailX + 420, detailY);
+
+    detailY += 70;
+    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('ID Number / መታወቂያ ቁጥር:', detailX, detailY);
+    ctx.font = '700 46px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(id, detailX + 420, detailY);
+
+    detailY += 70;
+    ctx.font = '700 38px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Department / ክፍል:', detailX, detailY);
+    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(department, detailX + 420, detailY);
+
+    detailY += 60;
+    ctx.font = '700 38px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Phone / ስልክ:', detailX, detailY);
+    ctx.font = '700 42px "Segoe UI", Arial, sans-serif';
+    ctx.fillText(phone, detailX + 420, detailY);
 
     const imageUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `FereHaymanot_ID_${id.replace(/\//g, '_')}.png`;
+    link.download = `FreHaymanot_ID_${id.replace(/\//g, '_')}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -279,21 +274,21 @@ export const Registration: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Student Registration</h1>
-          <p className="text-gray-500">Register new students individually or in bulk</p>
+          <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">{t.studentRegistration}</h1>
+          <p className="text-gray-500">{t.registerNewStudents}</p>
         </div>
         <div className="flex bg-white p-1 rounded-full shadow-sm border border-gray-100">
           <button
             onClick={() => setBulkMode(false)}
             className={cn("px-6 py-2 rounded-full text-sm font-medium transition-all", !bulkMode ? "bg-[#5A5A40] text-white" : "text-gray-500 hover:bg-gray-50")}
           >
-            Individual
+            {t.individual}
           </button>
           <button
             onClick={() => setBulkMode(true)}
             className={cn("px-6 py-2 rounded-full text-sm font-medium transition-all", bulkMode ? "bg-[#5A5A40] text-white" : "text-gray-500 hover:bg-gray-50")}
           >
-            Bulk Upload
+            {t.bulkUpload}
           </button>
         </div>
       </header>
@@ -313,11 +308,11 @@ export const Registration: React.FC = () => {
                   <CheckCircle2 size={40} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-serif font-bold">Registration Successful!</h2>
-                  <p className="text-gray-500">{success.fullName} has been registered.</p>
+                  <h2 className="text-2xl font-serif font-bold">{t.registrationSuccessful}</h2>
+                  <p className="text-gray-500">{success.fullName} {t.registered}</p>
                 </div>
                 <div className="bg-gray-50 p-6 rounded-2xl inline-block">
-                  <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">Student ID</p>
+                  <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">{t.studentId}</p>
                   <p className="text-xl font-mono font-bold text-[#5A5A40]">{success.id}</p>
                 </div>
                 <div className="flex justify-center gap-4">
@@ -325,13 +320,13 @@ export const Registration: React.FC = () => {
                     onClick={() => downloadQR(success)}
                     className="flex items-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors"
                   >
-                    <Download size={18} /> Download QR
+                    <Download size={18} /> {t.downloadQr}
                   </button>
                   <button
                     onClick={() => setSuccess(null)}
                     className="flex items-center gap-2 border border-gray-200 px-6 py-3 rounded-full hover:bg-gray-50 transition-colors"
                   >
-                    Register Another
+                    Register Another / ሌላ ይመዝግቡ
                   </button>
                 </div>
               </div>
@@ -339,27 +334,27 @@ export const Registration: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.fullName}</label>
                     <input
                       required
                       value={form.fullName}
                       onChange={e => setForm({ ...form, fullName: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
-                      placeholder="Enter full name"
+                      placeholder="Enter full name / ሙሉ ስም ያስገቡ"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Phone Number</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.phoneNumber}</label>
                     <input
                       required
                       value={form.phone}
                       onChange={e => setForm({ ...form, phone: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
-                      placeholder="09..."
+                      placeholder="09... / 09..."
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Email (Optional)</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.email} (Optional)</label>
                     <input
                       type="email"
                       value={form.email}
@@ -369,7 +364,7 @@ export const Registration: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Department</label>
+                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.department}</label>
                     <select
                       value={form.department}
                       onChange={e => setForm({ ...form, department: e.target.value })}
@@ -391,7 +386,7 @@ export const Registration: React.FC = () => {
                   className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-olive-900/20 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 className="animate-spin" size={20} /> : <UserPlus size={20} />}
-                  Register Student
+                  {t.registerStudent}
                 </button>
               </form>
             )}
@@ -409,16 +404,16 @@ export const Registration: React.FC = () => {
                 <div className="flex justify-center gap-8">
                   <div className="text-center">
                     <p className="text-4xl font-bold text-[#5A5A40]">{bulkResults.total}</p>
-                    <p className="text-xs text-gray-400 uppercase tracking-widest">Total</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest">{t.total}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-4xl font-bold text-green-600">{bulkResults.success}</p>
-                    <p className="text-xs text-gray-400 uppercase tracking-widest">Success</p>
+                    <p className="text-xs text-gray-400 uppercase tracking-widest">{t.success}</p>
                   </div>
                 </div>
                 {bulkResults.errors.length > 0 && (
                   <div className="text-left bg-red-50 p-4 rounded-xl max-h-40 overflow-y-auto">
-                    <p className="text-xs font-bold text-red-600 uppercase mb-2">Errors</p>
+                    <p className="text-xs font-bold text-red-600 uppercase mb-2">{t.errors}</p>
                     <ul className="text-xs text-red-500 list-disc pl-4 space-y-1">
                       {bulkResults.errors.map((err, i) => <li key={i}>{err}</li>)}
                     </ul>
@@ -428,7 +423,7 @@ export const Registration: React.FC = () => {
                   onClick={() => setBulkResults(null)}
                   className="bg-[#5A5A40] text-white px-8 py-3 rounded-full hover:bg-[#4A4A30] transition-colors"
                 >
-                  Upload More
+                  {t.uploadMore}
                 </button>
               </div>
             ) : (
@@ -437,21 +432,21 @@ export const Registration: React.FC = () => {
                   <Upload size={40} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-serif font-bold">Bulk Registration</h2>
-                  <p className="text-gray-500 max-w-sm mx-auto">Upload a CSV file with columns: Full Name, Phone, Email, Department</p>
+                  <h2 className="text-2xl font-serif font-bold">Bulk Registration / በብዛት ምዝገባ</h2>
+                  <p className="text-gray-500 max-w-sm mx-auto">Upload a CSV file with columns: Full Name, Phone, Email, Department / ኮላም ያላቸው ሲኤስቪ ፋይል ይስቀሉ፡ ሙሉ ስም፣ ስልክ፣ ኢሜይል፣ ክፍል</p>
                 </div>
 
                 <div className="flex justify-center gap-4">
                   <label className="cursor-pointer bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] transition-all shadow-lg shadow-olive-900/20 flex items-center gap-2">
                     <FileText size={20} />
-                    Choose CSV File
+                    {t.chooseCsvFile}
                     <input type="file" accept=".csv" className="hidden" onChange={handleBulkUpload} disabled={loading} />
                   </label>
                 </div>
 
                 <div className="text-xs text-gray-400">
-                  <p>Make sure your CSV follows the required format.</p>
-                  <button className="text-[#5A5A40] font-bold mt-2 hover:underline">Download Template</button>
+                  <p>{t.makeSureCsvFormat}</p>
+                  <button className="text-[#5A5A40] font-bold mt-2 hover:underline">{t.downloadTemplate}</button>
                 </div>
               </div>
             )}
