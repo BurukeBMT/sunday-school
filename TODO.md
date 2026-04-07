@@ -1,11 +1,11 @@
-# ID Template Print Updates
+# Phone Number Validation Task
 
-## Plan Steps:
-1. ✅ Analyzed files/searches
-2. ✅ Created plan + confirmed
-3. ✅ Created src/lib/printIdCard.ts util
-4. ✅ Updated StudentList.tsx (refactored to use util)
-5. ✅ Updated Registration.tsx (refactored to use util)
-6. ✅ No lint errors blocking runtime
-7. ✅ Ready for testing: npm run dev, navigate to Students/Registration, test print buttons
-8. [COMPLETE]
+## Steps:
+- [x] 1. Create TODO.md
+- [x] 2. Add helper function and update phone input field with restrictions (type, pattern, onChange filter)
+- [x] 3. Add real-time validation state and styling
+- [x] 4. Update handleSubmit validation
+- [x] 5. Update bulk upload validation
+- [x] 6. Test locally with `npm run dev`
+- [x] 7. Complete task
+

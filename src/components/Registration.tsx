@@ -24,6 +24,31 @@ export const Registration: React.FC = () => {
   const { t } = useLanguage();
   const [form, setForm] = useState({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0] });
   const [loading, setLoading] = useState(false);
+  const [phoneInvalid, setPhoneInvalid] = useState(false);
+
+  const isValidPhone = (phone: string): boolean => {
+    return phone.startsWith('+251') && /^\+251\d{9}$/.test(phone);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/[^\d+]/g, ''); // Only digits and +
+
+    // Auto-add +251 if starts with 9
+    if (value.startsWith('9') && value.length === 1) {
+      value = '+251' + value;
+    }
+
+    // Enforce prefix
+    if (!value.startsWith('+251')) {
+      if (value.startsWith('251')) value = '+' + value;
+      else if (!value.startsWith('+')) value = '+251' + value.slice(0, 9);
+    } else {
+      value = '+251' + value.slice(4).slice(0, 9); // Max 9 digits after
+    }
+
+    setForm({ ...form, phone: value });
+    setPhoneInvalid(value && !isValidPhone(value));
+  };
   const [success, setSuccess] = useState<Student | null>(null);
   const [error, setError] = useState('');
   const [bulkMode, setBulkMode] = useState(false);
@@ -56,6 +81,12 @@ export const Registration: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!isValidPhone(form.phone)) {
+      setError('Phone number must be +251 followed by exactly 9 digits (e.g., +251912345678)');
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log('Starting registration... Profile:', profile);
@@ -156,6 +187,11 @@ export const Registration: React.FC = () => {
 
           if (!fullName || !phone) {
             errors.push(`Row ${index + 1}: missing required fields (Full Name and Phone are required).`);
+            continue;
+          }
+
+          if (!isValidPhone(phone)) {
+            errors.push(`Row ${index + 1}: Invalid phone format (${phone}). Must be +251 followed by 9 digits.`);
             continue;
           }
 
@@ -277,10 +313,16 @@ export const Registration: React.FC = () => {
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-400">{t.phoneNumber}</label>
                     <input
                       required
+                      type="tel"
+                      pattern="^\+251\d{9}$"
+                      title="Phone must start with +251 followed by exactly 9 digits"
                       value={form.phone}
-                      onChange={e => setForm({ ...form, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
-                      placeholder="09... / 09..."
+                      onChange={handlePhoneChange}
+                      className={`w-full px-4 py-3 rounded-xl border-2 transition-all outline-none ${phoneInvalid
+                        ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-400'
+                        : 'border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 focus:border-olive-400'
+                        }`}
+                      placeholder="+251 912345678"
                     />
                   </div>
                   <div className="space-y-2">
