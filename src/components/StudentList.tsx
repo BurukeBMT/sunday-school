@@ -63,28 +63,6 @@ export const StudentList: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
 
-    ctx.fillStyle = '#FCF9F2';
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    try {
-      const template = new Image();
-      template.crossOrigin = 'anonymous';
-      template.src = '/logo.jpg';
-      await new Promise((resolve, reject) => {
-        template.onload = () => resolve(null);
-        template.onerror = reject;
-      });
-      ctx.drawImage(template, 0, 0, canvasWidth, canvasHeight);
-    } catch {
-      ctx.fillStyle = '#FCF9F2';
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    }
-
-    const qrSize = 420;
-    const qrX = (canvasWidth - qrSize) / 2;
-    const qrY = 220;
-    const panelPadding = 48;
-
     const drawRoundedRect = (x: number, y: number, w: number, h: number, r: number) => {
       ctx.beginPath();
       ctx.moveTo(x + r, y);
@@ -99,12 +77,98 @@ export const StudentList: React.FC = () => {
       ctx.closePath();
     };
 
-    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 36);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+    const drawWheatIcon = (x: number, y: number, scale: number) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.strokeStyle = '#7A6A3F';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 90);
+      ctx.stroke();
+      const leafPositions = [-30, -18, -6, 6, 18, 30];
+      leafPositions.forEach((offset, index) => {
+        ctx.beginPath();
+        ctx.ellipse(offset, 20 + index * 10, 12, 18, Math.PI / 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#D9B966';
+        ctx.fill();
+        ctx.stroke();
+      });
+      ctx.restore();
+    };
+
+    const drawGrapesIcon = (x: number, y: number, scale: number) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+      ctx.fillStyle = '#7E2F6B';
+      for (let row = 0; row < 3; row += 1) {
+        for (let col = 0; col < 3 - row; col += 1) {
+          ctx.beginPath();
+          ctx.arc(col * 26 - row * 12, row * 30, 18, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.fillStyle = '#4A2D30';
+      ctx.beginPath();
+      ctx.moveTo(-26, -8);
+      ctx.lineTo(0, -64);
+      ctx.lineTo(10, -58);
+      ctx.lineTo(-18, -14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+
+    ctx.fillStyle = '#E6EEE3';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    drawRoundedRect(28, 28, canvasWidth - 56, canvasHeight - 56, 60);
+    ctx.fillStyle = '#F8F3E6';
     ctx.fill();
-    ctx.strokeStyle = '#CBA64E';
-    ctx.lineWidth = 14;
-    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 36);
+    ctx.lineWidth = 18;
+    ctx.strokeStyle = '#5A6B4D';
+    drawRoundedRect(18, 18, canvasWidth - 36, canvasHeight - 36, 72);
+    ctx.stroke();
+
+    const headerHeight = 240;
+    drawRoundedRect(60, 60, canvasWidth - 120, headerHeight, 44);
+    ctx.fillStyle = '#FFF8EE';
+    ctx.fill();
+    ctx.strokeStyle = '#C9A75C';
+    ctx.lineWidth = 10;
+    drawRoundedRect(60, 60, canvasWidth - 120, headerHeight, 44);
+    ctx.stroke();
+
+    ctx.fillStyle = '#3F4B2F';
+    ctx.font = '800 58px "Segoe UI", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ፈረ የሕይማኖት ሰ/ቤት', canvasWidth / 2, 160);
+    ctx.font = '600 40px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Fere Haymanot Sunday School', canvasWidth / 2, 212);
+
+    ctx.strokeStyle = '#5A6B4D';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(140, 265);
+    ctx.lineTo(canvasWidth - 140, 265);
+    ctx.stroke();
+
+    drawWheatIcon(130, 120, 1.3);
+    drawGrapesIcon(canvasWidth - 160, 120, 1.3);
+
+    const qrSize = 420;
+    const qrX = (canvasWidth - qrSize) / 2;
+    const qrY = 320;
+    const panelPadding = 40;
+
+    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 42);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fill();
+    ctx.strokeStyle = '#C9A75C';
+    ctx.lineWidth = 16;
+    drawRoundedRect(qrX - panelPadding, qrY - panelPadding, qrSize + panelPadding * 2, qrSize + panelPadding * 2, 42);
     ctx.stroke();
 
     const qrImg = new Image();
@@ -116,17 +180,21 @@ export const StudentList: React.FC = () => {
     });
     ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-    const textBaseY = qrY + qrSize + 96;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#0F1917';
-    ctx.font = '700 54px Arial';
+    const textBaseY = qrY + qrSize + 94;
+    ctx.fillStyle = '#312F26';
+    ctx.font = '700 50px "Segoe UI", Arial, sans-serif';
     ctx.fillText(student.fullName, canvasWidth / 2, textBaseY);
 
-    ctx.font = '500 38px Arial';
-    ctx.fillStyle = '#1C1C1C';
-    ctx.fillText(`ID Number: ${student.id}`, canvasWidth / 2, textBaseY + 72);
-    ctx.fillText(`Department: ${student.department}`, canvasWidth / 2, textBaseY + 128);
-    ctx.fillText(`Phone: ${student.phone}`, canvasWidth / 2, textBaseY + 184);
+    ctx.font = '600 36px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#3E3A2F';
+    ctx.fillText(`Name: ${student.fullName}`, canvasWidth / 2, textBaseY + 80);
+    ctx.fillText(`ID Number: ${student.id}`, canvasWidth / 2, textBaseY + 140);
+    ctx.fillText(`Department: ${student.department}`, canvasWidth / 2, textBaseY + 200);
+    ctx.fillText(`Phone: ${student.phone}`, canvasWidth / 2, textBaseY + 260);
+
+    ctx.fillStyle = '#5A6B4D';
+    ctx.font = '600 32px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('ፈረ የሕይማኖት ሰ/ቤት', canvasWidth / 2, canvasHeight - 60);
 
     return await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
