@@ -23,11 +23,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function DEPARTMENTS() {
+      return ['Computer Science', 'Engineering', 'Business', 'Mathematics', 'Physics', 'Chemistry', 'Biology'];
+    }
+
     function isAdmin() {
-      return isAuthenticated() && 
-        (request.auth.token.email == "burukmaedot16@gmail.com" || 
-         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin']));
+      return isAuthenticated() && request.auth.token.email == "burukmaedot16@gmail.com";
     }
 
     function isSuperAdmin() {
@@ -49,7 +50,7 @@ service cloud.firestore {
 
     function isValidStudent(data) {
       return data.id is string && data.fullName is string && data.phone is string && 
-             data.department in DEPARTMENTS && data.qrToken is string && data.createdAt is string &&
+             DEPARTMENTS().hasAny([data.department]) && data.qrToken is string && data.createdAt is string &&
              (!('email' in data) || data.email is string);
     }
 
