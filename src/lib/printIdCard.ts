@@ -1,52 +1,63 @@
 import QRCode from 'qrcode';
-import { jsPDF } from 'jspdf';
 import { Student } from '../types';
+
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+    });
+};
 
 export const printIdCard = async (student: Student): Promise<Blob> => {
     const qrData = JSON.stringify({ id: student.id, token: student.qrToken });
     const qrUrl = await QRCode.toDataURL(qrData, { width: 256 });
+    const qrImg = await loadImage(qrUrl);
 
-    // Create PDF
-    const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: [105, 74] // ID card size approx 105x74mm
-    });
+    const width = 1050;
+    const height = 740;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
 
-    // Background (simulate template)
-    doc.setFillColor(255, 255, 240);
-    doc.rect(0, 0, 105, 74, 'F');
+    if (!ctx) throw new Error('Unable to create canvas context');
 
-    doc.setFillColor(255, 255, 255);
-    doc.rect(5, 15, 30, 30, 'F'); // QR background
+    // Background
+    ctx.fillStyle = '#FFFFF0';
+    ctx.fillRect(0, 0, width, height);
 
-    // QR Code
-    const qrImg = new Image();
-    qrImg.src = qrUrl;
-    doc.addImage(qrImg, 'PNG', 7, 17, 26, 26);
+    // QR background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(60, 90, 260, 260);
 
-    // Student Info
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text(student.fullName, 42, 20);
+    // QR image
+    ctx.drawImage(qrImg, 70, 100, 240, 240);
 
-    doc.setFontSize(10);
-    doc.text(`ID: ${student.id}`, 42, 32);
-    doc.text(student.department, 42, 40);
-    doc.text(student.phone, 42, 48);
+    // Text
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = 'bold 52px Arial';
+    ctx.fillText(student.fullName, 360, 140);
 
-    return new Promise<Blob>((resolve) => {
-        const blob = doc.output('blob');
-        resolve(blob);
-    });
-};
+    ctx.font = 'bold 36px Arial';
+    ctx.fillText(`ID: ${student.id}`, 360, 200);
 
-export const generateBulkQRs = async (students: Student[]): Promise<Blob> => {
-    const zip = new JSZip();
-    for (const student of students) {
-        const blob = await printIdCard(student);
-        zip.file(`${student.id.replace(/\//g, '_')}.pdf`, blob);
+    ctx.font = '28px Arial';
+    ctx.fillText(student.department, 360, 250);
+    ctx.fillText(student.phone, 360, 300);
+
+    ctx.font = '24px Arial';
+    if (student.email) {
+        ctx.fillText(student.email, 360, 350);
     }
-    return zip.generateAsync({ type: 'blob' });
+
+    return await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Failed to generate PNG blob'));
+        }, 'image/png');
+    });
 };
+
 
