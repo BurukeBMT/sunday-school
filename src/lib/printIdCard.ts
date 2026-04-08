@@ -118,7 +118,16 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
         );
     }
 
-    // 📦 Convert canvas into downloadable PNG file
+    // � PHONE (optional)
+    if (student.phone) {
+        currentY += Math.round(height * 0.07);
+        ctx.fillText(
+            `ስልክ፡ ${student.phone}`,
+            textX,
+            currentY,
+            textWidth
+        );
+    }
     return await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((blob) => {
             if (blob) resolve(blob); // Return image

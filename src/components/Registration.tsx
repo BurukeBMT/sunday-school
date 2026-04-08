@@ -295,7 +295,7 @@ export const Registration: React.FC = () => {
                       value={form.fullName}
                       onChange={e => setForm({ ...form, fullName: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all"
-                      placeholder="Enter full name / ሙሉ ስም ያስገቡ"
+                      placeholder="Enter full name"
                     />
                   </div>
                   <div className="space-y-2">
