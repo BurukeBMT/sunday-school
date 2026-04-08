@@ -9,7 +9,7 @@ export interface UserProfile {
 }
 
 export interface Student {
-  id: string; // ፍ/ሃ/ሰ/ት/00001
+  id: string; // ፍ_ሃ_ሰ_ት_00001
   fullName: string;
   phone: string;
   email?: string;

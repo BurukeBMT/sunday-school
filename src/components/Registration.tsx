@@ -67,7 +67,7 @@ export const Registration: React.FC = () => {
         const match = lastId.match(/\d+$/);
         if (match) nextNum = parseInt(match[0]) + 1;
       }
-      const newId = `ፍ/ሃ/ሰ/ት/${nextNum.toString().padStart(5, '0')}`;
+      const newId = `ፍ_ሃ_ሰ_ት_${nextNum.toString().padStart(5, '0')}`;
       console.log('Generated new ID:', newId);
       return newId;
     } catch (err) {
@@ -186,7 +186,7 @@ export const Registration: React.FC = () => {
 
           try {
             maxNum++; // Sequential
-            const studentId = `ፍ/ሃ/ሰ/ት/${maxNum.toString().padStart(5, '0')}`;
+            const studentId = `ፍ_ሃ_ሰ_ት_${maxNum.toString().padStart(5, '0')}`;
             const qrToken = Math.random().toString(36).substring(2, 15);
             const student: Student = {
               id: studentId,
