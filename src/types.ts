@@ -8,8 +8,10 @@ export interface UserProfile {
   assignedCourses?: string[];
 }
 
+export const STUDENT_ID_REGEX = /^FHST\d{5}$/;
+
 export interface Student {
-  id: string; // ፍ_ሃ_ሰ_ት_00001
+  id: string; // FHST00001
   fullName: string;
   phone: string;
   email?: string;

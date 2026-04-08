@@ -5,8 +5,8 @@ Fix "Missing or insufficient permissions" on `students/ፍ/ሃ/ሰ/ት/00001` by
 
 ## Breakdown Steps
 - [x] 1. Create this TODO.md
-- [ ] 2. Edit src/components/Registration.tsx: Change generateStudentId() to flat "FHST00001" format; update bulk too
-- [ ] 3. Edit src/types.ts: Add ID regex const for validation
+- [x] 2. Edit src/components/Registration.tsx: Change generateStudentId() to flat "FHST00001" format; update bulk too
+- [x] 3. Edit src/types.ts: Add ID regex const for validation
 - [ ] 4. Edit firestore.rules: 
   - Student rule: allow create if isAdmin() || isSuperAdmin()
   - Update DEPARTMENTS() to match Amharic from types.ts
