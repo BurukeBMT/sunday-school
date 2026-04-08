@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { UserProfile, DEPARTMENTS } from '../types';
-import { cn } from '../lib/utils';
 
 export const AdminManagement: React.FC = () => {
   const [admins, setAdmins] = useState<UserProfile[]>([]);
@@ -34,7 +33,10 @@ export const AdminManagement: React.FC = () => {
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'users'), where('role', '==', 'admin')), (snap) => {
-      setAdmins(snap.docs.map(d => d.data() as UserProfile));
+      const allAdmins = snap.docs.map(d => d.data() as UserProfile);
+      // Filter out pending admins (those with UIDs starting with 'pending_')
+      const activeAdmins = allAdmins.filter(admin => !admin.uid.startsWith('pending_'));
+      setAdmins(activeAdmins);
       setLoading(false);
     });
     return () => unsub();
@@ -99,21 +101,20 @@ export const AdminManagement: React.FC = () => {
             <tr className="bg-gray-50/50 border-bottom border-gray-100">
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Name</th>
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Email</th>
-              <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Status</th>
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td colSpan={4} className="px-8 py-12 text-center text-gray-400">
+                <td colSpan={3} className="px-8 py-12 text-center text-gray-400">
                   <Loader2 className="animate-spin mx-auto mb-2" size={24} />
                   Loading admins...
                 </td>
               </tr>
             ) : admins.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-8 py-12 text-center text-gray-400">
+                <td colSpan={3} className="px-8 py-12 text-center text-gray-400">
                   No admins found.
                 </td>
               </tr>
@@ -124,18 +125,10 @@ export const AdminManagement: React.FC = () => {
                     <div className="w-8 h-8 bg-olive-50 text-olive-600 rounded-full flex items-center justify-center text-xs font-bold">
                       {admin.name?.[0] || admin.email[0].toUpperCase()}
                     </div>
-                    <span className="font-medium text-gray-900">{admin.name || 'Pending...'}</span>
+                    <span className="font-medium text-gray-900">{admin.name || 'Unknown'}</span>
                   </div>
                 </td>
                 <td className="px-8 py-4 text-gray-500">{admin.email}</td>
-                <td className="px-8 py-4">
-                  <span className={cn(
-                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                    admin.uid.startsWith('pending_') ? "bg-yellow-50 text-yellow-600" : "bg-green-50 text-green-600"
-                  )}>
-                    {admin.uid.startsWith('pending_') ? 'Pending Login' : 'Active'}
-                  </span>
-                </td>
                 <td className="px-8 py-4 text-right">
                   <button
                     onClick={() => deleteAdmin(admin.uid)}
