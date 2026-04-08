@@ -23,7 +23,7 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
         loadImage(templateUrl), // Load background image
         QRCode.toDataURL( // Generate QR code as base64 image
             JSON.stringify({ id: student.id, token: student.qrToken }), // QR content
-            { width: 220 } // QR resolution (smaller for better layout)
+            { width: 260 } // QR resolution (smaller for better layout)
         )
     ]);
 
@@ -47,16 +47,16 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
     ctx.drawImage(templateImg, 0, 0, width, height);
 
     // 📐 General spacing from edges
-    const padding = Math.round(width * 0.05);
+    const padding = Math.round(width * 0.1);
 
     // 🔳 QR CODE SETTINGS
 
-    const qrSize = Math.round(width * 0.25); // QR size (25% of width)
+    const qrSize = Math.round(width * 0.40); // QR size (25% of width)
     const qrX = padding; // Left position
-    const qrY = Math.round(height * 0.32); // Move QR down for better alignment
+    const qrY = Math.round(height * 0.36); // Move QR down for better alignment
 
     // ⚪ Draw white background behind QR for visibility
-    const border = Math.round(width * 0.01); // Small padding around QR
+    const border = Math.round(width * 0.001); // Small padding around QR
     ctx.fillStyle = 'rgba(255,255,255,0.95)'; // Almost white
     ctx.fillRect(
         qrX - border,
@@ -70,16 +70,16 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
 
     // 📝 TEXT AREA (RIGHT SIDE)
 
-    const textX = qrX + qrSize + padding * 1.5; // Start after QR
+    const textX = qrX + qrSize + padding * 1; // Start after QR
     const textWidth = width - textX - padding; // Max width for text
 
-    let currentY = qrY + 10; // Align text with top of QR
+    let currentY = qrY + 20; // Align text with top of QR
 
     ctx.fillStyle = '#1a1a1a'; // Text color (dark)
     ctx.textBaseline = 'top'; // Align text from top
 
     // 👤 FULL NAME
-    ctx.font = `bold ${Math.round(width * 0.045)}px Arial`; // Big bold font
+    ctx.font = `bold ${Math.round(width * 0.04)}px Nyala`; // Big bold font
     ctx.fillText(
         `ሙሉ ስም፡ ${student.fullName}`, // Text content
         textX,
@@ -89,7 +89,7 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
 
     // 🆔 STUDENT ID
     currentY += Math.round(height * 0.07); // Move down
-    ctx.font = `bold ${Math.round(width * 0.04)}px Arial`;
+    ctx.font = `bold ${Math.round(width * 0.04)}px Nyala`;
     ctx.fillText(
         `ID: ${student.id}`,
         textX,
@@ -98,8 +98,8 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
     );
 
     // 🏫 DEPARTMENT
-    currentY += Math.round(height * 0.06);
-    ctx.font = `${Math.round(width * 0.038)}px Arial`;
+    currentY += Math.round(height * 0.07);
+    ctx.font = `${Math.round(width * 0.038)}px Nyala`;
     ctx.fillText(
         `ክፍል፡ ${student.department}`,
         textX,
@@ -109,7 +109,7 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
 
     // 📧 EMAIL (optional)
     if (student.email) {
-        currentY += Math.round(height * 0.05);
+        currentY += Math.round(height * 0.07);
         ctx.fillText(
             `ኢ-ሜይል፡ ${student.email}`,
             textX,
