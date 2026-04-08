@@ -70,7 +70,7 @@ export const printIdCard = async (student: Student): Promise<Blob> => {
 
     // 📝 TEXT AREA (RIGHT SIDE)
 
-    const textX = qrX + qrSize + padding * 1; // Start after QR
+    const textX = qrX + qrSize + padding; // Start after QR
     const textWidth = width - textX - padding; // Max width for text
 
     let currentY = qrY + 20; // Align text with top of QR
