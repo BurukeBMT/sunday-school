@@ -106,24 +106,13 @@ export const Registration: React.FC = () => {
       };
 
       console.log('Registering student:', student);
-      try {
-        await setDoc(doc(db, 'students', studentId), student);
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, `students/${studentId}`);
-      }
+      await setDoc(doc(db, 'students', studentId), student);
       console.log('Student registered successfully');
       setSuccess(student);
       setForm({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0] });
     } catch (err: any) {
       console.error('Registration error details:', err);
-      let message = 'Failed to register student. Please try again.';
-      try {
-        const parsed = JSON.parse(err.message);
-        if (parsed.error.includes('insufficient permissions')) {
-          message = `Student registration unlocked! Super Admin access granted.`;
-        }
-      } catch (e) { }
-      setError(message);
+      setError('Registration failed. Check console for details.');
     } finally {
       setLoading(false);
     }
