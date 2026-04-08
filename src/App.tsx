@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { LandingPage } from './components/LandingPage';
@@ -10,11 +11,12 @@ import { CourseManagement } from './components/CourseManagement';
 import { Scanner } from './components/Scanner';
 import { AttendanceLogs } from './components/AttendanceLogs';
 import { AdminManagement } from './components/AdminManagement';
+import { Unauthorized } from './components/Unauthorized';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Menu, X, Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const { user, profile, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const { user, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   if (loading) {
@@ -29,27 +31,9 @@ const AppContent: React.FC = () => {
     return <LandingPage />;
   }
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard': return <Dashboard />;
-      case 'registration': return <Registration />;
-      case 'students': return <StudentList />;
-      case 'courses': return <CourseManagement />;
-      case 'scanner': return <Scanner />;
-      case 'logs': return <AttendanceLogs />;
-      case 'admins': return <AdminManagement />;
-      default: return <Dashboard />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#f5f5f0] flex">
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
-      />
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       <main className="flex-1 lg:ml-72 min-h-screen p-4 lg:p-12">
         {/* Mobile Header */}
@@ -67,7 +51,67 @@ const AppContent: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto">
-          {renderContent()}
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/scanner"
+              element={
+                <ProtectedRoute>
+                  <Scanner />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendanceLogs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/registration"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <Registration />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/students"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <StudentList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courses"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <CourseManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admins"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin']}>
+                  <AdminManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </div>
       </main>
     </div>
@@ -78,7 +122,9 @@ export default function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <AppContent />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
       </LanguageProvider>
     </AuthProvider>
   );

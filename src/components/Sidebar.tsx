@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   UserPlus,
@@ -18,25 +18,23 @@ import LanguageSelector from './LanguageSelector';
 import { cn } from '../lib/utils';
 
 interface SidebarProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen, setIsOpen }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { profile, logout } = useAuth();
   const { t } = useLanguage();
-  const isSuperAdmin = profile?.role === 'super_admin';
+  const isSuperAdmin = profile?.role === 'superadmin';
 
   const menuItems = [
-    { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
-    { id: 'registration', label: t.registration, icon: UserPlus, hidden: !isSuperAdmin },
-    { id: 'students', label: t.students, icon: Users, hidden: !isSuperAdmin },
-    { id: 'courses', label: t.courses, icon: BookOpen, hidden: !isSuperAdmin },
-    { id: 'admins', label: t.admins, icon: ShieldCheck, hidden: !isSuperAdmin },
-    { id: 'scanner', label: t.scanner, icon: QrCode },
-    { id: 'logs', label: t.logs, icon: ClipboardList },
+    { path: '/dashboard', label: t.dashboard, icon: LayoutDashboard },
+    { path: '/registration', label: t.registration, icon: UserPlus, hidden: !isSuperAdmin },
+    { path: '/students', label: t.students, icon: Users, hidden: !isSuperAdmin },
+    { path: '/courses', label: t.courses, icon: BookOpen, hidden: !isSuperAdmin },
+    { path: '/admins', label: t.admins, icon: ShieldCheck, hidden: !isSuperAdmin },
+    { path: '/scanner', label: t.scanner, icon: QrCode },
+    { path: '/attendance', label: t.logs, icon: ClipboardList },
   ];
 
   return (
@@ -75,25 +73,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
 
           <nav className="flex-1 space-y-2 min-h-0">
             {menuItems.filter(item => !item.hidden).map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setIsOpen(false);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group",
-                  activeTab === item.id
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={() => setIsOpen(false)}
+                className={({ isActive }) => cn(
+                  "w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group text-left",
+                  isActive
                     ? "bg-[#5A5A40] text-white shadow-lg shadow-olive-900/20"
                     : "text-[#8E9299] hover:bg-white/5 hover:text-white"
                 )}
               >
-                <item.icon size={20} className={cn(
-                  "transition-transform group-hover:scale-110",
-                  activeTab === item.id ? "text-white" : "text-[#8E9299]"
-                )} />
+                <item.icon size={20} className="transition-transform group-hover:scale-110" />
                 <span className="font-medium">{item.label}</span>
-              </button>
+              </NavLink>
             ))}
           </nav>
 
@@ -105,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{profile?.name || 'User'}</p>
                 <p className="text-[10px] text-[#8E9299] uppercase tracking-wider">
-                  {profile?.role?.replace('_', ' ')}
+                  {profile?.role}
                 </p>
               </div>
             </div>

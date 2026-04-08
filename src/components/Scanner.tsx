@@ -40,7 +40,7 @@ export const Scanner: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const q = profile?.role === 'super_admin'
+        const q = profile?.role === 'superadmin'
           ? query(collection(db, 'courses'))
           : query(collection(db, 'courses'), where('adminIds', 'array-contains', profile?.uid));
 

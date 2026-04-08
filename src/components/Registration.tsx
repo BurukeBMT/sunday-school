@@ -311,7 +311,7 @@ export const Registration: React.FC = () => {
                         ? 'border-red-300 bg-red-50 focus:border-red-400 focus:ring-red-400'
                         : 'border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 focus:border-olive-400'
                         }`}
-                      placeholder="+251 912345678"
+                      placeholder="+251..."
                     />
                   </div>
                   <div className="space-y-2">

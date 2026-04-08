@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  getDocs, 
-  setDoc, 
-  doc, 
-  deleteDoc, 
+import {
+  collection,
+  query,
+  getDocs,
+  setDoc,
+  doc,
+  deleteDoc,
   onSnapshot,
   where
 } from 'firebase/firestore';
-import { 
-  ShieldCheck, 
-  Plus, 
-  Trash2, 
-  Mail, 
+import {
+  ShieldCheck,
+  Plus,
+  Trash2,
+  Mail,
   User,
   X,
   Loader2,
@@ -27,6 +27,7 @@ export const AdminManagement: React.FC = () => {
   const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAdminUid, setNewAdminUid] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
   const [error, setError] = useState('');
@@ -43,24 +44,29 @@ export const AdminManagement: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!newAdminUid.trim()) {
+      setError('Admin UID is required and must match an existing Firebase Auth user.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // In a real app, you'd use Firebase Admin SDK to create users.
-      // Here we just pre-register the email in the users collection.
-      // When the user logs in with this email, their profile will be updated.
-      const tempUid = `pending_${Math.random().toString(36).substring(2, 9)}`;
       const newAdmin: UserProfile = {
-        uid: tempUid,
-        email: newAdminEmail,
+        uid: newAdminUid.trim(),
+        email: newAdminEmail.trim(),
         role: 'admin',
-        name: newAdminName,
+        name: newAdminName.trim(),
         assignedCourses: []
       };
-      await setDoc(doc(db, 'users', tempUid), newAdmin);
+
+      await setDoc(doc(db, 'users', newAdmin.uid), newAdmin);
       setIsModalOpen(false);
+      setNewAdminUid('');
       setNewAdminEmail('');
       setNewAdminName('');
     } catch (err) {
-      setError('Failed to add admin');
+      setError('Failed to add admin. Ensure the UID is valid and the user exists in Firebase Auth.');
     } finally {
       setLoading(false);
     }
@@ -79,7 +85,7 @@ export const AdminManagement: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Admin Management</h1>
           <p className="text-gray-500">Manage system administrators and their access</p>
         </div>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="flex items-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20"
         >
@@ -131,7 +137,7 @@ export const AdminManagement: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-8 py-4 text-right">
-                  <button 
+                  <button
                     onClick={() => deleteAdmin(admin.uid)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                   >
@@ -155,11 +161,29 @@ export const AdminManagement: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleAddAdmin} className="p-8 space-y-6">
+              <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-4 text-sm text-yellow-700">
+                Admin accounts must already exist in Firebase Authentication.
+                Enter the actual Firebase Auth UID for the new admin user.
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Firebase Auth UID</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    required
+                    value={newAdminUid}
+                    onChange={e => setNewAdminUid(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                    placeholder="Admin Firebase UID"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">This must be an existing Firebase Authentication UID.</p>
+              </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
+                  <input
                     required
                     value={newAdminName}
                     onChange={e => setNewAdminName(e.target.value)}
@@ -172,7 +196,7 @@ export const AdminManagement: React.FC = () => {
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
+                  <input
                     required
                     type="email"
                     value={newAdminEmail}
@@ -182,14 +206,14 @@ export const AdminManagement: React.FC = () => {
                   />
                 </div>
               </div>
-              
+
               {error && (
                 <div className="p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-3 text-sm">
                   <AlertCircle size={18} /> {error}
                 </div>
               )}
 
-              <button 
+              <button
                 disabled={loading}
                 className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-bold hover:bg-[#4A4A30] transition-all disabled:opacity-50"
               >
