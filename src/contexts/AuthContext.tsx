@@ -72,7 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } else {
           // Check if there's an admin record with this email (created via AdminManagement)
-          const q = query(collection(db, 'users'), where('email', '==', user.email), where('role', '==', 'admin'));
+          const userEmail = user.email?.trim().toLowerCase();
+          const q = query(collection(db, 'users'), where('email', '==', userEmail), where('role', '==', 'admin'));
           const querySnap = await getDocs(q);
 
           if (!querySnap.empty) {

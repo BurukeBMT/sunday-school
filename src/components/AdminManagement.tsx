@@ -54,9 +54,10 @@ export const AdminManagement: React.FC = () => {
       // Generate a temporary UID for the admin record
       const tempUid = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
+      const normalizedEmail = newAdminEmail.trim().toLowerCase();
       const newAdmin: UserProfile = {
         uid: tempUid,
-        email: newAdminEmail.trim(),
+        email: normalizedEmail,
         role: 'admin',
         name: newAdminName.trim(),
         assignedCourses: []
