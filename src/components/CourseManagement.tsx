@@ -178,16 +178,21 @@ export const CourseManagement: React.FC = () => {
             Loading courses...
           </div>
         ) : courses.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-[32px] border border-gray-100">
+          <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-3xl border border-gray-100 shadow-lg">
             No courses created yet.
           </div>
         ) : courses.map((course) => (
-          <div key={course.id} className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100 flex flex-col group">
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-olive-50 text-olive-600 rounded-2xl flex items-center justify-center">
-                <BookOpen size={24} />
+          <div key={course.id} className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100/50 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 group overflow-hidden relative">
+            {/* Background Pattern */}
+            <div className="absolute top-0 right-0 w-20 h-20 opacity-5 group-hover:opacity-10 transition-opacity duration-300">
+              <BookOpen size={80} className="text-gray-300" />
+            </div>
+
+            <div className="relative flex items-start justify-between mb-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-olive-50 to-olive-100 text-olive-600 rounded-3xl flex items-center justify-center shadow-lg border border-olive-200/50">
+                <BookOpen size={26} />
               </div>
-              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <button
                   onClick={() => {
                     setEditingCourse(course);
@@ -200,48 +205,51 @@ export const CourseManagement: React.FC = () => {
                     setForm({ department: course.department, adminIds: course.adminIds });
                     setIsModalOpen(true);
                   }}
-                  className="p-2 text-gray-400 hover:text-olive-600 hover:bg-olive-50 rounded-lg transition-colors"
+                  className="p-3 text-gray-400 hover:text-olive-600 hover:bg-olive-50 rounded-2xl transition-all duration-200 shadow-sm"
                 >
                   <Edit2 size={18} />
                 </button>
                 <button
                   onClick={() => deleteCourse(course.id)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all duration-200 shadow-sm"
                 >
                   <Trash2 size={18} />
                 </button>
               </div>
             </div>
-            <h3 className="text-xl font-serif font-bold mb-1">{course.name}</h3>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">{course.department}</p>
+            <h3 className="text-xl font-serif font-bold mb-2 text-[#1a1a1a] group-hover:scale-105 transition-transform duration-300">{course.name}</h3>
+            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 bg-gray-50 px-3 py-1 rounded-full inline-block">{course.department}</p>
 
-            <div className="space-y-3 mt-auto">
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Calendar size={16} />
-                <span>{formatScheduleDisplay(course.schedule)}</span>
+            <div className="space-y-4 mt-auto">
+              <div className="flex items-center gap-3 text-sm text-gray-500 bg-gray-50 p-3 rounded-2xl">
+                <Calendar size={18} className="text-olive-600" />
+                <span className="font-medium">{formatScheduleDisplay(course.schedule)}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Users size={16} />
-                <span>{course.adminIds.length} Admins Assigned</span>
+              <div className="flex items-center gap-3 text-sm text-gray-500 bg-gray-50 p-3 rounded-2xl">
+                <Users size={18} className="text-purple-600" />
+                <span className="font-medium">{course.adminIds.length} Admins Assigned</span>
               </div>
             </div>
+
+            {/* Decorative Element */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-olive-200 to-transparent"></div>
           </div>
         ))}
       </div>
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden">
-            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-2xl font-serif font-bold">{editingCourse ? 'Edit Course' : 'Create Course'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-gray-100/50">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+              <h3 className="text-2xl font-serif font-bold text-[#1a1a1a]">{editingCourse ? 'Edit Course' : 'Create Course'}</h3>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-2xl transition-all duration-200">
                 <X size={24} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Course Name</label>
+              <div className="space-y-3">
+                <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Course Name</label>
                 <select
                   value={courseNameSelection}
                   onChange={e => {
@@ -253,7 +261,7 @@ export const CourseManagement: React.FC = () => {
                       department: selected === SPECIAL_GRADE_COURSE ? GRADE_DEPARTMENTS[0] : DEPARTMENTS[0]
                     }));
                   }}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                  className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
                 >
                   {COURSE_NAME_OPTIONS.map(option => (
                     <option key={option} value={option}>
@@ -264,60 +272,60 @@ export const CourseManagement: React.FC = () => {
               </div>
 
               {courseNameSelection === 'other' && (
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Other Course Name</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Other Course Name</label>
                   <input
                     required
                     value={customCourseName}
                     onChange={e => setCustomCourseName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                    className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
                     placeholder="Enter course name"
                   />
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Department</label>
+              <div className="space-y-3">
+                <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Department</label>
                 <select
                   value={form.department}
                   onChange={e => setForm({ ...form, department: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                  className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
                 >
                   {departmentOptions.map(dept => <option key={dept} value={dept}>{dept}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Schedule Date</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Schedule Date</label>
                   <input
                     type="date"
                     value={scheduleDate}
                     onChange={e => setScheduleDate(e.target.value)}
                     min={today}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                    className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Schedule Time</label>
+                <div className="space-y-3">
+                  <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Schedule Time</label>
                   <input
                     type="time"
                     value={scheduleTime}
                     onChange={e => setScheduleTime(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                    className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
                   />
                 </div>
               </div>
               {scheduleDate && (
-                <div className="rounded-2xl border border-olive-100 bg-olive-50 p-4 text-sm text-olive-700">
-                  Ethiopian calendar: <span className="font-semibold">{formatEthiopianDate(new Date(scheduleDate))}</span>
+                <div className="rounded-3xl border border-olive-100 bg-gradient-to-r from-olive-50 to-olive-25 p-4 text-sm text-olive-700 shadow-sm">
+                  Ethiopian calendar: <span className="font-bold">{formatEthiopianDate(new Date(scheduleDate))}</span>
                   {scheduleTime ? ` • ${scheduleTime}` : ''}
                 </div>
               )}
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Assign Admins</label>
-                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-100 rounded-xl">
+              <div className="space-y-3">
+                <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Assign Admins</label>
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-4 border border-gray-100 rounded-2xl bg-gray-50/50 shadow-inner">
                   {admins.map(admin => (
-                    <label key={admin.uid} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <label key={admin.uid} className="flex items-center gap-3 p-3 hover:bg-white/50 rounded-2xl cursor-pointer transition-all duration-200">
                       <input
                         type="checkbox"
                         checked={form.adminIds.includes(admin.uid)}
@@ -327,9 +335,9 @@ export const CourseManagement: React.FC = () => {
                             : form.adminIds.filter(id => id !== admin.uid);
                           setForm({ ...form, adminIds: newIds });
                         }}
-                        className="w-4 h-4 text-olive-600 rounded"
+                        className="w-5 h-5 text-olive-600 rounded-lg border-2 border-gray-300 focus:ring-olive-500"
                       />
-                      <span className="text-sm">{admin.name || admin.email}</span>
+                      <span className="text-sm font-medium text-gray-700">{admin.name || admin.email}</span>
                     </label>
                   ))}
                 </div>
@@ -337,9 +345,14 @@ export const CourseManagement: React.FC = () => {
 
               <button
                 disabled={loading}
-                className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-bold hover:bg-[#4A4A30] transition-all disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-[#5A5A40] to-[#4A4A30] text-white py-4 rounded-2xl font-bold hover:from-[#4A4A30] hover:to-[#3A3A20] transition-all duration-300 disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
-                {loading ? 'Saving...' : editingCourse ? 'Update Course' : 'Create Course'}
+                {loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="animate-spin" size={18} />
+                    Saving...
+                  </div>
+                ) : editingCourse ? 'Update Course' : 'Create Course'}
               </button>
             </form>
           </div>

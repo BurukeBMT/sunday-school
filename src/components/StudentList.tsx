@@ -142,8 +142,65 @@ export const StudentList: React.FC = () => {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {loading ? (
+          <div className="py-12 text-center text-gray-400">
+            <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+            {t.loading}
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <div className="py-12 text-center text-gray-400 bg-white rounded-3xl border border-gray-100">
+            {t.noStudentsFound}
+          </div>
+        ) : filteredStudents.map((student) => (
+          <div key={student.id} className="bg-white p-6 rounded-3xl shadow-lg border border-gray-100/50 hover:shadow-xl transition-all duration-300">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-[#5A5A40] to-[#4A4A30] rounded-2xl flex items-center justify-center text-white font-bold shadow-lg">
+                  {student.fullName[0]}
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-[#1a1a1a]">{student.fullName}</h3>
+                  <p className="text-sm text-gray-500">{student.id}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => downloadSingleQR(student)}
+                  className="p-3 text-olive-600 hover:bg-olive-50 rounded-2xl transition-colors shadow-sm"
+                  title={t.downloadQr}
+                >
+                  <QrCode size={18} />
+                </button>
+                <button
+                  onClick={() => deleteStudent(student.id)}
+                  className="p-3 text-red-500 hover:bg-red-50 rounded-2xl transition-colors shadow-sm"
+                  title={t.deleteStudent}
+                >
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-gray-50 p-3 rounded-2xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t.department}</p>
+                <span className="px-3 py-1 rounded-full bg-white text-gray-700 text-xs font-medium shadow-sm">
+                  {student.department}
+                </span>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-2xl">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t.phone}</p>
+                <p className="font-medium text-gray-900">{student.phone}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white rounded-[32px] shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
