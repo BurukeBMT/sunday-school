@@ -11,8 +11,7 @@ import { CourseManagement } from './components/CourseManagement';
 import { Scanner } from './components/Scanner';
 import { AttendanceLogs } from './components/AttendanceLogs';
 import { AdminManagement } from './components/AdminManagement';
-import { Unauthorized } from './components/Unauthorized';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { InstallPrompt } from './components/InstallPrompt';
 import { Menu, X, Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -139,6 +138,9 @@ const AppContent: React.FC = () => {
           </Routes>
         </div>
       </main>
+
+      {/* Install Prompt */}
+      <InstallPrompt />
     </div>
   );
 };
