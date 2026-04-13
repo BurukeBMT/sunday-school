@@ -23,9 +23,10 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const { profile, logout } = useAuth();
+  const { profile, user, logout } = useAuth();
   const { t } = useLanguage();
-  const isSuperAdmin = profile?.role === 'superadmin';
+  const SUPER_ADMIN_EMAIL = 'burukmaedot16@gmail.com';
+  const isSuperAdmin = profile?.role === 'superadmin' || user?.email?.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
 
   const menuItems = [
     { path: '/dashboard', label: t.dashboard, icon: LayoutDashboard },

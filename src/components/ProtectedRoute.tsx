@@ -9,8 +9,11 @@ interface ProtectedRouteProps {
     allowedRoles?: UserRole[];
 }
 
+const SUPER_ADMIN_EMAIL = 'burukmaedot16@gmail.com';
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = ['admin', 'superadmin'] }) => {
     const { user, profile, loading } = useAuth();
+    const isSuperAdminEmail = user?.email?.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
 
     if (loading) {
         return (
@@ -20,7 +23,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         );
     }
 
-    if (!user || !profile || !allowedRoles.includes(profile.role)) {
+    if (!user) {
+        return <Navigate to="/unauthorized" replace />;
+    }
+
+    if (isSuperAdminEmail) {
+        return <>{children}</>;
+    }
+
+    if (!profile || !allowedRoles.includes(profile.role)) {
         return <Navigate to="/unauthorized" replace />;
     }
 
