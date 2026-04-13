@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UserProfile } from '../types';
@@ -9,7 +9,8 @@ interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
-  login: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithEmailPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -122,13 +123,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const login = async () => {
+  const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    // Force account selection dialog
     provider.setCustomParameters({
       prompt: 'select_account'
     });
     await signInWithPopup(auth, provider);
+  };
+
+  const loginWithEmailPassword = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
   };
 
   const logout = async () => {
@@ -136,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithEmailPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );

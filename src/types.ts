@@ -6,6 +6,7 @@ export interface UserProfile {
   role: UserRole;
   name?: string;
   assignedCourses?: string[];
+  mustResetPassword?: boolean;
 }
 
 export const STUDENT_ID_REGEX = /^FHST\d{5}$/;

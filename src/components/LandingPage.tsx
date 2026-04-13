@@ -15,9 +15,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 export const LandingPage: React.FC = () => {
-  const { login } = useAuth();
+  const { loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('hero');
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
 
@@ -75,7 +77,7 @@ export const LandingPage: React.FC = () => {
           <button onClick={() => scrollToSection('services')} className="px-6 py-2 text-sm font-bold text-[#5A5A40] hover:bg-olive-50 rounded-xl transition-all">
             አገልግሎቶች
           </button>
-          <button onClick={login} className="px-8 py-2.5 bg-[#5A5A40] text-white rounded-2xl font-bold hover:bg-[#4A4A30] shadow-lg transition-all">
+          <button onClick={() => navigate('/login')} className="px-8 py-2.5 bg-[#5A5A40] text-white rounded-2xl font-bold hover:bg-[#4A4A30] shadow-lg transition-all">
             ግባ
           </button>
         </div>
@@ -98,7 +100,7 @@ export const LandingPage: React.FC = () => {
             "ፍሬ" ማለት ውጤት፣ ግብ... "ሃይማኖት" ማለት ማመን፣ መታመን እና ተስፋ። በሥራ የሚገለጥ እምነት!
           </blockquote>
           <div className="flex flex-col sm:flex-row gap-4 mt-10">
-            <button onClick={login} className="px-10 py-5 bg-[#5A5A40] text-white rounded-2xl font-bold text-lg flex items-center gap-3 hover:bg-[#4A4A30] shadow-2xl transition-all group">
+            <button onClick={() => navigate('/login')} className="px-10 py-5 bg-[#5A5A40] text-white rounded-2xl font-bold text-lg flex items-center gap-3 hover:bg-[#4A4A30] shadow-2xl transition-all group">
               አሁን ይጀምሩ <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
             </button>
             <button onClick={() => scrollToSection('about')} className="px-10 py-5 bg-white text-[#1a1a1a] rounded-2xl font-bold border-2 border-gray-200 hover:bg-gray-50 shadow-xl transition-all">

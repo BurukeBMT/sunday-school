@@ -11,7 +11,11 @@ import { CourseManagement } from './components/CourseManagement';
 import { Scanner } from './components/Scanner';
 import { AttendanceLogs } from './components/AttendanceLogs';
 import { AdminManagement } from './components/AdminManagement';
+import { Unauthorized } from './components/Unauthorized';
 import { InstallPrompt } from './components/InstallPrompt';
+import { LoginPage } from './components/LoginPage';
+import { ResetPassword } from './components/ResetPassword';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { Menu, X, Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -27,7 +31,13 @@ const AppContent: React.FC = () => {
   }
 
   if (!user) {
-    return <LandingPage />;
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
   return (
@@ -130,6 +140,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
                   <AdminManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <ProtectedRoute>
+                  <ResetPassword />
                 </ProtectedRoute>
               }
             />

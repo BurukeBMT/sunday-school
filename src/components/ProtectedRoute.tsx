@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
@@ -13,6 +13,7 @@ const SUPER_ADMIN_EMAIL = 'burukmaedot16@gmail.com';
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = ['admin', 'superadmin'] }) => {
     const { user, profile, loading } = useAuth();
+    const location = useLocation();
     const isSuperAdminEmail = user?.email?.trim().toLowerCase() === SUPER_ADMIN_EMAIL;
 
     if (loading) {
@@ -29,6 +30,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
     if (isSuperAdminEmail) {
         return <>{children}</>;
+    }
+
+    if (profile?.mustResetPassword && location.pathname !== '/reset-password') {
+        return <Navigate to="/reset-password" replace />;
     }
 
     if (!profile || !allowedRoles.includes(profile.role)) {
