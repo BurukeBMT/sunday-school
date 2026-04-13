@@ -6,6 +6,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  setDoc,
   doc,
   onSnapshot,
   where
@@ -24,6 +25,21 @@ import {
 import { db } from '../firebase';
 import { Course, DEPARTMENTS, UserProfile } from '../types';
 import { cn } from '../lib/utils';
+import { formatEthiopianDate } from '../lib/ethiopianCalendar';
+
+const COURSE_NAME_OPTIONS = [
+  'የትምህርት መርሃ ግብር',
+  'መዝሙር ጥናት',
+  'የጽዳት አገልግሎት',
+  'የልማት ስራ',
+  'የተከታታይ ትምህርት መርሃ ግብር',
+  'ልዩ መርሃ ግብር',
+  'other'
+];
+
+const SPECIAL_GRADE_COURSE = 'የተከታታይ ትምህርት መርሃ ግብር';
+
+const GRADE_DEPARTMENTS = Array.from({ length: 12 }, (_, i) => `${i + 1}ኛ ክፍል`);
 
 export const CourseManagement: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -31,7 +47,37 @@ export const CourseManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [form, setForm] = useState({ name: '', department: DEPARTMENTS[0], schedule: '', adminIds: [] as string[] });
+  const [courseNameSelection, setCourseNameSelection] = useState(COURSE_NAME_OPTIONS[0]);
+  const [customCourseName, setCustomCourseName] = useState('');
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('08:00');
+  const [form, setForm] = useState({ department: DEPARTMENTS[0], adminIds: [] as string[] });
+
+  const isGradeCourse = courseNameSelection === SPECIAL_GRADE_COURSE;
+  const departmentOptions = isGradeCourse ? GRADE_DEPARTMENTS : DEPARTMENTS;
+
+  // Get today's date in YYYY-MM-DD format for min date validation
+  const today = new Date().toISOString().split('T')[0];
+
+  const parseSchedule = (schedule?: string) => {
+    if (!schedule) {
+      return { date: '', time: '08:00' };
+    }
+
+    const [datePart, timePart] = schedule.split(' ');
+    const validDate = /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? datePart : '';
+    const validTime = /^\d{2}:\d{2}$/.test(timePart || '') ? timePart : '08:00';
+
+    return { date: validDate, time: validTime };
+  };
+
+  const formatScheduleDisplay = (schedule?: string) => {
+    if (!schedule) return 'No schedule set';
+    const [datePart, timePart] = schedule.split(' ');
+    const dateText = datePart || schedule;
+    const ethiopian = /^\d{4}-\d{2}-\d{2}$/.test(datePart) ? ` · ${formatEthiopianDate(new Date(datePart))}` : '';
+    return `${dateText}${timePart ? ` ${timePart}` : ''}${ethiopian}`;
+  };
 
   useEffect(() => {
     const unsubCourses = onSnapshot(collection(db, 'courses'), (snap) => {
@@ -53,17 +99,41 @@ export const CourseManagement: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      const courseName = courseNameSelection === 'other' ? customCourseName.trim() : courseNameSelection;
+      if (!courseName) {
+        alert('Please enter a course name.');
+        setLoading(false);
+        return;
+      }
+
+      // Validate that schedule date is not in the past
+      if (scheduleDate && scheduleDate < today) {
+        alert('Cannot schedule courses for past dates. Please select today or a future date.');
+        setLoading(false);
+        return;
+      }
+
+      const schedule = scheduleDate ? `${scheduleDate} ${scheduleTime}` : '';
+      const courseData = {
+        name: courseName,
+        department: form.department,
+        schedule,
+        adminIds: form.adminIds,
+      };
+
       if (editingCourse) {
-        await updateDoc(doc(db, 'courses', editingCourse.id), form);
-        // Update admins assignedCourses
-        // (Simplification: in a real app, you'd sync these more robustly)
+        await updateDoc(doc(db, 'courses', editingCourse.id), courseData);
       } else {
         const newCourseRef = doc(collection(db, 'courses'));
-        await setDoc(newCourseRef, { id: newCourseRef.id, ...form });
+        await setDoc(newCourseRef, { id: newCourseRef.id, ...courseData });
       }
       setIsModalOpen(false);
       setEditingCourse(null);
-      setForm({ name: '', department: DEPARTMENTS[0], schedule: '', adminIds: [] });
+      setCourseNameSelection(COURSE_NAME_OPTIONS[0]);
+      setCustomCourseName('');
+      setScheduleDate('');
+      setScheduleTime('08:00');
+      setForm({ department: DEPARTMENTS[0], adminIds: [] });
     } catch (err) {
       console.error('Course save error:', err);
       alert('Failed to save course');
@@ -86,7 +156,15 @@ export const CourseManagement: React.FC = () => {
           <p className="text-gray-500">Create and assign admins to Sunday School courses</p>
         </div>
         <button
-          onClick={() => { setIsModalOpen(true); setEditingCourse(null); }}
+          onClick={() => {
+            setIsModalOpen(true);
+            setEditingCourse(null);
+            setCourseNameSelection(COURSE_NAME_OPTIONS[0]);
+            setCustomCourseName('');
+            setScheduleDate('');
+            setScheduleTime('08:00');
+            setForm({ department: DEPARTMENTS[0], adminIds: [] });
+          }}
           className="flex items-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20"
         >
           <Plus size={20} /> Create Course
@@ -113,7 +191,13 @@ export const CourseManagement: React.FC = () => {
                 <button
                   onClick={() => {
                     setEditingCourse(course);
-                    setForm({ name: course.name, department: course.department, schedule: course.schedule || '', adminIds: course.adminIds });
+                    const foundOption = COURSE_NAME_OPTIONS.includes(course.name) ? course.name : 'other';
+                    setCourseNameSelection(foundOption);
+                    setCustomCourseName(foundOption === 'other' ? course.name : '');
+                    const parsed = parseSchedule(course.schedule);
+                    setScheduleDate(parsed.date);
+                    setScheduleTime(parsed.time);
+                    setForm({ department: course.department, adminIds: course.adminIds });
                     setIsModalOpen(true);
                   }}
                   className="p-2 text-gray-400 hover:text-olive-600 hover:bg-olive-50 rounded-lg transition-colors"
@@ -134,7 +218,7 @@ export const CourseManagement: React.FC = () => {
             <div className="space-y-3 mt-auto">
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Calendar size={16} />
-                <span>{course.schedule || 'No schedule set'}</span>
+                <span>{formatScheduleDisplay(course.schedule)}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Users size={16} />
@@ -158,14 +242,40 @@ export const CourseManagement: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Course Name</label>
-                <input
-                  required
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
+                <select
+                  value={courseNameSelection}
+                  onChange={e => {
+                    const selected = e.target.value;
+                    setCourseNameSelection(selected);
+                    setCustomCourseName('');
+                    setForm(prev => ({
+                      ...prev,
+                      department: selected === SPECIAL_GRADE_COURSE ? GRADE_DEPARTMENTS[0] : DEPARTMENTS[0]
+                    }));
+                  }}
                   className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
-                  placeholder="e.g. Bible Study"
-                />
+                >
+                  {COURSE_NAME_OPTIONS.map(option => (
+                    <option key={option} value={option}>
+                      {option === 'other' ? 'Other' : option}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              {courseNameSelection === 'other' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Other Course Name</label>
+                  <input
+                    required
+                    value={customCourseName}
+                    onChange={e => setCustomCourseName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                    placeholder="Enter course name"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Department</label>
                 <select
@@ -173,18 +283,36 @@ export const CourseManagement: React.FC = () => {
                   onChange={e => setForm({ ...form, department: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
                 >
-                  {DEPARTMENTS.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                  {departmentOptions.map(dept => <option key={dept} value={dept}>{dept}</option>)}
                 </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Schedule</label>
-                <input
-                  value={form.schedule}
-                  onChange={e => setForm({ ...form, schedule: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
-                  placeholder="e.g. Sundays 10:00 AM"
-                />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Schedule Date</label>
+                  <input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={e => setScheduleDate(e.target.value)}
+                    min={today}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Schedule Time</label>
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={e => setScheduleTime(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
+                  />
+                </div>
               </div>
+              {scheduleDate && (
+                <div className="rounded-2xl border border-olive-100 bg-olive-50 p-4 text-sm text-olive-700">
+                  Ethiopian calendar: <span className="font-semibold">{formatEthiopianDate(new Date(scheduleDate))}</span>
+                  {scheduleTime ? ` • ${scheduleTime}` : ''}
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Assign Admins</label>
                 <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-100 rounded-xl">
