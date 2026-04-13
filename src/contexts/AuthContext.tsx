@@ -3,6 +3,7 @@ import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut 
 import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UserProfile } from '../types';
+import { findLocalAdminByEmail } from '../lib/adminStore';
 
 interface AuthContextType {
   user: User | null;
@@ -71,8 +72,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setProfile(null);
           }
         } else {
-          // Check if there's an admin record with this email (created via AdminManagement)
           const userEmail = user.email?.trim().toLowerCase();
+
+          // First, try to resolve a local admin record if Firestore is not used for admin storage.
+          const localAdmin = userEmail ? findLocalAdminByEmail(userEmail) : undefined;
+          if (localAdmin) {
+            setProfile({
+              uid: user.uid,
+              email: userEmail || '',
+              role: 'admin',
+              name: user.displayName || localAdmin.name,
+              assignedCourses: []
+            });
+            setLoading(false);
+            return;
+          }
+
+          // Check if there's an admin record with this email (created via AdminManagement in Firestore)
           const q = query(collection(db, 'users'), where('email', '==', userEmail), where('role', '==', 'admin'));
           const querySnap = await getDocs(q);
 

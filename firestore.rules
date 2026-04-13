@@ -28,7 +28,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.email == "burukmaedot16@gmail.com";
+      return isAuthenticated() && (
+        request.auth.token.email == "burukmaedot16@gmail.com" ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'])
+      );
     }
 
     function isSuperAdmin() {
@@ -66,7 +70,11 @@ service cloud.firestore {
 
     // Rules
     match /users/{uid} {
-      allow read: if isAuthenticated() && (request.auth.uid == uid || isSuperAdmin());
+      allow read: if isAuthenticated() && (
+        request.auth.uid == uid || 
+        isSuperAdmin() ||
+        (resource.data.email.toLowerCase() == request.auth.token.email.toLowerCase() && resource.data.role in ['admin', 'super_admin'])
+      );
       allow create: if (isAuthenticated() && request.auth.uid == uid && isValidUser(request.resource.data)) || 
                     (isSuperAdmin() && isValidUser(request.resource.data));
       allow update: if (isSuperAdmin() || (isAuthenticated() && request.auth.uid == uid)) && isValidUser(request.resource.data);

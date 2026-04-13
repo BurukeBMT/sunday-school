@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  collection,
-  query,
-  getDocs,
-  setDoc,
-  doc,
-  deleteDoc,
-  onSnapshot,
-  where
-} from 'firebase/firestore';
-import {
   ShieldCheck,
   Plus,
   Trash2,
@@ -19,12 +9,11 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { db } from '../firebase';
-import { UserProfile, DEPARTMENTS } from '../types';
+import { LocalAdminRecord, getLocalAdmins, saveLocalAdmin, removeLocalAdmin } from '../lib/adminStore';
 import { cn } from '../lib/utils';
 
 export const AdminManagement: React.FC = () => {
-  const [admins, setAdmins] = useState<UserProfile[]>([]);
+  const [admins, setAdmins] = useState<LocalAdminRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -32,11 +21,8 @@ export const AdminManagement: React.FC = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const unsub = onSnapshot(query(collection(db, 'users'), where('role', '==', 'admin')), (snap) => {
-      setAdmins(snap.docs.map(d => d.data() as UserProfile));
-      setLoading(false);
-    });
-    return () => unsub();
+    setAdmins(getLocalAdmins());
+    setLoading(false);
   }, []);
 
   const handleAddAdmin = async (e: React.FormEvent) => {
@@ -51,19 +37,14 @@ export const AdminManagement: React.FC = () => {
     }
 
     try {
-      // Generate a temporary UID for the admin record
-      const tempUid = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
       const normalizedEmail = newAdminEmail.trim().toLowerCase();
-      const newAdmin: UserProfile = {
-        uid: tempUid,
+      const newAdmin: LocalAdminRecord = {
         email: normalizedEmail,
-        role: 'admin',
         name: newAdminName.trim(),
-        assignedCourses: []
       };
 
-      await setDoc(doc(db, 'users', tempUid), newAdmin);
+      const updatedAdmins = saveLocalAdmin(newAdmin);
+      setAdmins(updatedAdmins);
       setIsModalOpen(false);
       setNewAdminEmail('');
       setNewAdminName('');
@@ -74,9 +55,10 @@ export const AdminManagement: React.FC = () => {
     }
   };
 
-  const deleteAdmin = async (uid: string) => {
+  const deleteAdmin = (email: string) => {
     if (window.confirm('Are you sure you want to remove this admin?')) {
-      await deleteDoc(doc(db, 'users', uid));
+      const updatedAdmins = removeLocalAdmin(email);
+      setAdmins(updatedAdmins);
     }
   };
 
@@ -120,7 +102,7 @@ export const AdminManagement: React.FC = () => {
                 </td>
               </tr>
             ) : admins.map((admin) => (
-              <tr key={admin.uid} className="hover:bg-gray-50/50 transition-colors group">
+              <tr key={admin.email} className="hover:bg-gray-50/50 transition-colors group">
                 <td className="px-8 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-olive-50 text-olive-600 rounded-full flex items-center justify-center text-xs font-bold">
@@ -133,14 +115,14 @@ export const AdminManagement: React.FC = () => {
                 <td className="px-8 py-4">
                   <span className={cn(
                     "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
-                    admin.uid.startsWith('admin_') ? "bg-yellow-50 text-yellow-600" : "bg-green-50 text-green-600"
+                    "bg-green-50 text-green-600"
                   )}>
-                    {admin.uid.startsWith('admin_') ? 'Pending Login' : 'Active'}
+                    Stored admin
                   </span>
                 </td>
                 <td className="px-8 py-4 text-right">
                   <button
-                    onClick={() => deleteAdmin(admin.uid)}
+                    onClick={() => deleteAdmin(admin.email)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 size={18} />

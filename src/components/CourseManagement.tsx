@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
+import {
+  collection,
+  query,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
   onSnapshot,
   where
 } from 'firebase/firestore';
-import { 
-  BookOpen, 
-  Plus, 
-  Trash2, 
-  Edit2, 
-  Users, 
+import {
+  BookOpen,
+  Plus,
+  Trash2,
+  Edit2,
+  Users,
   Calendar,
   X,
   Check,
@@ -58,13 +58,14 @@ export const CourseManagement: React.FC = () => {
         // Update admins assignedCourses
         // (Simplification: in a real app, you'd sync these more robustly)
       } else {
-        const docRef = await addDoc(collection(db, 'courses'), form);
-        await updateDoc(docRef, { id: docRef.id });
+        const newCourseRef = doc(collection(db, 'courses'));
+        await setDoc(newCourseRef, { id: newCourseRef.id, ...form });
       }
       setIsModalOpen(false);
       setEditingCourse(null);
       setForm({ name: '', department: DEPARTMENTS[0], schedule: '', adminIds: [] });
     } catch (err) {
+      console.error('Course save error:', err);
       alert('Failed to save course');
     } finally {
       setLoading(false);
@@ -84,7 +85,7 @@ export const CourseManagement: React.FC = () => {
           <h1 className="text-3xl font-serif font-bold text-[#1a1a1a]">Course Management</h1>
           <p className="text-gray-500">Create and assign admins to Sunday School courses</p>
         </div>
-        <button 
+        <button
           onClick={() => { setIsModalOpen(true); setEditingCourse(null); }}
           className="flex items-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20"
         >
@@ -109,7 +110,7 @@ export const CourseManagement: React.FC = () => {
                 <BookOpen size={24} />
               </div>
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button 
+                <button
                   onClick={() => {
                     setEditingCourse(course);
                     setForm({ name: course.name, department: course.department, schedule: course.schedule || '', adminIds: course.adminIds });
@@ -119,7 +120,7 @@ export const CourseManagement: React.FC = () => {
                 >
                   <Edit2 size={18} />
                 </button>
-                <button 
+                <button
                   onClick={() => deleteCourse(course.id)}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 >
@@ -129,7 +130,7 @@ export const CourseManagement: React.FC = () => {
             </div>
             <h3 className="text-xl font-serif font-bold mb-1">{course.name}</h3>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">{course.department}</p>
-            
+
             <div className="space-y-3 mt-auto">
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Calendar size={16} />
@@ -157,19 +158,19 @@ export const CourseManagement: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Course Name</label>
-                <input 
+                <input
                   required
                   value={form.name}
-                  onChange={e => setForm({...form, name: e.target.value})}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
                   placeholder="e.g. Bible Study"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Department</label>
-                <select 
+                <select
                   value={form.department}
-                  onChange={e => setForm({...form, department: e.target.value})}
+                  onChange={e => setForm({ ...form, department: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
                 >
                   {DEPARTMENTS.map(dept => <option key={dept} value={dept}>{dept}</option>)}
@@ -177,9 +178,9 @@ export const CourseManagement: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Schedule</label>
-                <input 
+                <input
                   value={form.schedule}
-                  onChange={e => setForm({...form, schedule: e.target.value})}
+                  onChange={e => setForm({ ...form, schedule: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
                   placeholder="e.g. Sundays 10:00 AM"
                 />
@@ -189,14 +190,14 @@ export const CourseManagement: React.FC = () => {
                 <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-2 border border-gray-100 rounded-xl">
                   {admins.map(admin => (
                     <label key={admin.uid} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
-                      <input 
+                      <input
                         type="checkbox"
                         checked={form.adminIds.includes(admin.uid)}
                         onChange={e => {
-                          const newIds = e.target.checked 
+                          const newIds = e.target.checked
                             ? [...form.adminIds, admin.uid]
                             : form.adminIds.filter(id => id !== admin.uid);
-                          setForm({...form, adminIds: newIds});
+                          setForm({ ...form, adminIds: newIds });
                         }}
                         className="w-4 h-4 text-olive-600 rounded"
                       />
@@ -205,8 +206,8 @@ export const CourseManagement: React.FC = () => {
                   ))}
                 </div>
               </div>
-              
-              <button 
+
+              <button
                 disabled={loading}
                 className="w-full bg-[#5A5A40] text-white py-4 rounded-xl font-bold hover:bg-[#4A4A30] transition-all disabled:opacity-50"
               >
