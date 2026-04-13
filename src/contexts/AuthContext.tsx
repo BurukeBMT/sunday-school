@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { auth } from '../firebase';
-import { authGuard } from '../lib/authGuard';
+import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -29,10 +29,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       try {
-        const authorizedProfile = await authGuard();
-        setProfile(authorizedProfile);
+        // Special superadmin check - if this is the superadmin email, always ensure they have access
+        const superAdminEmail = 'burukmaedot16@gmail.com';
+        const isSuperAdminEmail = user.email?.trim().toLowerCase() === superAdminEmail;
+
+        if (isSuperAdminEmail) {
+          const superAdminProfile: UserProfile = {
+            uid: user.uid,
+            email: user.email!.trim().toLowerCase(),
+            role: 'superadmin',
+            name: user.displayName || '',
+            assignedCourses: []
+          };
+
+          try {
+            const docRef = doc(db, 'users', user.uid);
+            await setDoc(docRef, superAdminProfile, { merge: true });
+          } catch (error) {
+            console.warn('Could not persist superadmin profile to Firestore:', error);
+          }
+
+          setProfile(superAdminProfile);
+          setLoading(false);
+          return;
+        }
+
+        // First try to get profile by real UID
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const profile = docSnap.data() as UserProfile;
+          const normalizedRole = profile.role === 'super_admin' ? 'superadmin' : profile.role;
+
+          if (normalizedRole === 'admin' || normalizedRole === 'superadmin') {
+            setProfile({
+              ...profile,
+              role: normalizedRole as UserProfile['role'],
+            });
+          } else {
+            setProfile(null);
+          }
+        } else {
+          // Check if there's an admin record with this email (created via AdminManagement)
+          const q = query(collection(db, 'users'), where('email', '==', user.email), where('role', '==', 'admin'));
+          const querySnap = await getDocs(q);
+
+          if (!querySnap.empty) {
+            const adminDoc = querySnap.docs[0];
+            const adminData = adminDoc.data() as UserProfile;
+
+            // Update the admin record with the real Firebase Auth UID
+            const updatedProfile: UserProfile = {
+              ...adminData,
+              uid: user.uid,
+              name: user.displayName || adminData.name
+            };
+
+            await setDoc(docRef, updatedProfile);
+            await deleteDoc(adminDoc.ref); // Remove the old record
+
+            setProfile(updatedProfile);
+          } else {
+            setProfile(null);
+          }
+        }
       } catch (error) {
-        console.warn('Unauthorized user or missing Firestore profile:', error);
+        console.error('Auth error:', error);
         setProfile(null);
       } finally {
         setLoading(false);
@@ -44,6 +107,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
+    // Force account selection dialog
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
     await signInWithPopup(auth, provider);
   };
 

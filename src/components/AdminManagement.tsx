@@ -21,22 +21,19 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { UserProfile, DEPARTMENTS } from '../types';
+import { cn } from '../lib/utils';
 
 export const AdminManagement: React.FC = () => {
   const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newAdminUid, setNewAdminUid] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [newAdminName, setNewAdminName] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
     const unsub = onSnapshot(query(collection(db, 'users'), where('role', '==', 'admin')), (snap) => {
-      const allAdmins = snap.docs.map(d => d.data() as UserProfile);
-      // Filter out pending admins (those with UIDs starting with 'pending_')
-      const activeAdmins = allAdmins.filter(admin => !admin.uid.startsWith('pending_'));
-      setAdmins(activeAdmins);
+      setAdmins(snap.docs.map(d => d.data() as UserProfile));
       setLoading(false);
     });
     return () => unsub();
@@ -47,28 +44,30 @@ export const AdminManagement: React.FC = () => {
     setLoading(true);
     setError('');
 
-    if (!newAdminUid.trim()) {
-      setError('Admin UID is required and must match an existing Firebase Auth user.');
+    if (!newAdminEmail.trim() || !newAdminName.trim()) {
+      setError('Email and name are required.');
       setLoading(false);
       return;
     }
 
     try {
+      // Generate a temporary UID for the admin record
+      const tempUid = `admin_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
       const newAdmin: UserProfile = {
-        uid: newAdminUid.trim(),
+        uid: tempUid,
         email: newAdminEmail.trim(),
         role: 'admin',
         name: newAdminName.trim(),
         assignedCourses: []
       };
 
-      await setDoc(doc(db, 'users', newAdmin.uid), newAdmin);
+      await setDoc(doc(db, 'users', tempUid), newAdmin);
       setIsModalOpen(false);
-      setNewAdminUid('');
       setNewAdminEmail('');
       setNewAdminName('');
     } catch (err) {
-      setError('Failed to add admin. Ensure the UID is valid and the user exists in Firebase Auth.');
+      setError('Failed to add admin. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -101,20 +100,21 @@ export const AdminManagement: React.FC = () => {
             <tr className="bg-gray-50/50 border-bottom border-gray-100">
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Name</th>
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Email</th>
+              <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400">Status</th>
               <th className="px-8 py-4 text-xs font-bold uppercase tracking-widest text-gray-400 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {loading ? (
               <tr>
-                <td colSpan={3} className="px-8 py-12 text-center text-gray-400">
+                <td colSpan={4} className="px-8 py-12 text-center text-gray-400">
                   <Loader2 className="animate-spin mx-auto mb-2" size={24} />
                   Loading admins...
                 </td>
               </tr>
             ) : admins.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-8 py-12 text-center text-gray-400">
+                <td colSpan={4} className="px-8 py-12 text-center text-gray-400">
                   No admins found.
                 </td>
               </tr>
@@ -129,6 +129,14 @@ export const AdminManagement: React.FC = () => {
                   </div>
                 </td>
                 <td className="px-8 py-4 text-gray-500">{admin.email}</td>
+                <td className="px-8 py-4">
+                  <span className={cn(
+                    "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest",
+                    admin.uid.startsWith('admin_') ? "bg-yellow-50 text-yellow-600" : "bg-green-50 text-green-600"
+                  )}>
+                    {admin.uid.startsWith('admin_') ? 'Pending Login' : 'Active'}
+                  </span>
+                </td>
                 <td className="px-8 py-4 text-right">
                   <button
                     onClick={() => deleteAdmin(admin.uid)}
@@ -154,23 +162,8 @@ export const AdminManagement: React.FC = () => {
               </button>
             </div>
             <form onSubmit={handleAddAdmin} className="p-8 space-y-6">
-              <div className="rounded-2xl border border-yellow-100 bg-yellow-50 p-4 text-sm text-yellow-700">
-                Admin accounts must already exist in Firebase Authentication.
-                Enter the actual Firebase Auth UID for the new admin user.
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Firebase Auth UID</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    required
-                    value={newAdminUid}
-                    onChange={e => setNewAdminUid(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none"
-                    placeholder="Admin Firebase UID"
-                  />
-                </div>
-                <p className="text-xs text-gray-500">This must be an existing Firebase Authentication UID.</p>
+              <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
+                Enter the admin's email and name. They will be able to sign in with Google authentication using this email.
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Full Name</label>
