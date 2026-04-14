@@ -1,0 +1,56 @@
+{
+    "rules": {
+        "users": {
+            ".read": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )",".write": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )","$uid": {
+                ".read": "auth != null && (auth.uid === $uid || 
+          root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+          root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+          root.child('users').child(auth.uid).child('role').val() === 'super_admin')",".write": "auth != null && (auth.uid === $uid || 
+          root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+          root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+          root.child('users').child(auth.uid).child('role').val() === 'super_admin')"
+            }
+        },
+        "students": {
+            ".read": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )",".write": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )"
+        },
+        "courses": {
+            ".read": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )",".write": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )"
+        },
+        "attendance_logs": {
+            ".read": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )",".write": "auth != null && (
+        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
+      )"
+        }
+    }
+}
