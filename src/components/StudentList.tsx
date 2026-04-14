@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  collection,
+  ref,
   query,
-  getDocs,
-  orderBy,
-  where,
-  deleteDoc,
-  doc,
-  onSnapshot
-} from 'firebase/firestore';
+  get,
+  orderByChild,
+  remove,
+  onValue
+} from 'firebase/database';
 import {
   Search,
   Download,
@@ -21,7 +19,7 @@ import {
   Loader2,
   FileArchive
 } from 'lucide-react';
-import { db } from '../firebase';
+import { database } from '../firebase';
 import { Student, DEPARTMENTS } from '../types';
 import { cn } from '../lib/utils';
 import JSZip from 'jszip';
@@ -38,13 +36,19 @@ export const StudentList: React.FC = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
-    const unsub = onSnapshot(
-      query(collection(db, 'students'), orderBy('createdAt', 'desc')),
-      (snap) => {
-        setStudents(snap.docs.map(d => ({ id: d.id, ...d.data() } as Student)));
-        setLoading(false);
+    const studentsRef = ref(database, 'students');
+    const unsub = onValue(studentsRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        const studentList = Object.keys(data).map(key => ({ id: key, ...data[key] } as Student));
+        // Sort by createdAt desc
+        studentList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        setStudents(studentList);
+      } else {
+        setStudents([]);
       }
-    );
+      setLoading(false);
+    });
     return () => unsub();
   }, []);
 
@@ -96,7 +100,7 @@ export const StudentList: React.FC = () => {
 
   const deleteStudent = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
-      await deleteDoc(doc(db, 'students', id));
+      await remove(ref(database, 'students/' + id));
     }
   };
 

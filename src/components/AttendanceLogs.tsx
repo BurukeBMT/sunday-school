@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  collection,
+  ref,
   query,
-  getDocs,
-  orderBy,
-  where,
-  onSnapshot,
-  limit
-} from 'firebase/firestore';
+  get,
+  orderByChild,
+  equalTo,
+  onValue
+} from 'firebase/database';
 import {
   Search,
   Download,
@@ -19,7 +18,7 @@ import {
   Loader2,
   FileSpreadsheet
 } from 'lucide-react';
-import { db } from '../firebase';
+import { database } from '../firebase';
 import { AttendanceLog, Course, Student, DEPARTMENTS } from '../types';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -38,45 +37,55 @@ export const AttendanceLogs: React.FC = () => {
   useEffect(() => {
     // Fetch courses for filter
     const fetchCourses = async () => {
-      const snap = await getDocs(collection(db, 'courses'));
-      setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
+      const coursesRef = ref(database, 'courses');
+      const snap = await get(coursesRef);
+      if (snap.exists()) {
+        const data = snap.val();
+        setCourses(Object.keys(data).map(key => ({ id: key, ...data[key] } as Course)));
+      }
     };
     fetchCourses();
 
     // Fetch students for mapping
     const fetchStudents = async () => {
-      const snap = await getDocs(collection(db, 'students'));
-      const studentMap: Record<string, Student> = {};
-      snap.docs.forEach(d => {
-        studentMap[d.id] = d.data() as Student;
-      });
-      setStudents(studentMap);
+      const studentsRef = ref(database, 'students');
+      const snap = await get(studentsRef);
+      if (snap.exists()) {
+        const data = snap.val();
+        const studentMap: Record<string, Student> = {};
+        Object.keys(data).forEach(key => {
+          studentMap[key] = data[key] as Student;
+        });
+        setStudents(studentMap);
+      }
     };
     fetchStudents();
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    // Use a simpler query that doesn't require composite indexes initially
-    // We'll filter and sort in memory if needed, or use a basic query
-    let q = query(collection(db, 'attendance_logs'), orderBy('date', 'desc'), limit(100));
+    const logsRef = ref(database, 'attendance_logs');
+    let q = logsRef;
 
     if (dateFilter) {
-      q = query(collection(db, 'attendance_logs'), where('date', '==', dateFilter));
+      q = query(logsRef, orderByChild('date'), equalTo(dateFilter));
     }
 
-    const unsub = onSnapshot(q, (snap) => {
-      const logData = snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceLog));
-      // Sort by time descending in memory to avoid index requirement
+    const unsub = onValue(q, (snap) => {
+      let logData: AttendanceLog[] = [];
+      if (snap.exists()) {
+        const data = snap.val();
+        logData = Object.keys(data).map(key => ({ id: key, ...data[key] } as AttendanceLog));
+      }
+      // Sort by date desc, then time desc in memory
       logData.sort((a, b) => {
-        const timeA = a.time || '';
-        const timeB = b.time || '';
-        return timeB.localeCompare(timeA);
+        const dateA = new Date(a.date + ' ' + (a.time || ''));
+        const dateB = new Date(b.date + ' ' + (b.time || ''));
+        return dateB.getTime() - dateA.getTime();
       });
+      // Limit to 100
+      if (logData.length > 100) logData = logData.slice(0, 100);
       setLogs(logData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching logs:", error);
       setLoading(false);
     });
 

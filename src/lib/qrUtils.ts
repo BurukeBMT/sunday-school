@@ -1,4 +1,4 @@
-import QRCode from 'qrcode.react';
+import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 import { Student } from '../types';
 

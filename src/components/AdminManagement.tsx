@@ -8,17 +8,18 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { auth, db } from '../firebase';
+import { auth, database } from '../firebase';
 import {
-  collection,
+  ref,
   query,
-  where,
-  onSnapshot,
-  doc,
-  setDoc,
-  updateDoc,
-  deleteDoc
-} from 'firebase/firestore';
+  orderByChild,
+  equalTo,
+  onValue,
+  set,
+  update,
+  remove,
+  push
+} from 'firebase/database';
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -53,9 +54,16 @@ export const AdminManagement: React.FC = () => {
   const [info, setInfo] = useState('');
 
   useEffect(() => {
-    const adminsQuery = query(collection(db, 'users'), where('role', '==', 'admin'));
-    const unsubscribe = onSnapshot(adminsQuery, (snapshot) => {
-      setAdmins(snapshot.docs.map((d) => d.data() as UserProfile));
+    const adminsRef = ref(database, 'users');
+    const adminsQuery = query(adminsRef, orderByChild('role'), equalTo('admin'));
+    const unsubscribe = onValue(adminsQuery, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const adminList = Object.keys(data).map(key => ({ ...data[key], uid: key }));
+        setAdmins(adminList);
+      } else {
+        setAdmins([]);
+      }
       setLoading(false);
     });
 
@@ -118,7 +126,7 @@ export const AdminManagement: React.FC = () => {
         mustResetPassword: true,
       };
 
-      await setDoc(doc(db, 'users', credential.user.uid), userProfile);
+      await set(ref(database, 'users/' + credential.user.uid), userProfile);
       await restoreSuperAdmin();
 
       setInfo('Admin created successfully. The admin must sign in and reset their password.');
@@ -137,7 +145,7 @@ export const AdminManagement: React.FC = () => {
   const handleRemoveAdmin = async (admin: UserProfile) => {
     if (!window.confirm(`Remove ${admin.email} from admin access?`)) return;
     try {
-      await deleteDoc(doc(db, 'users', admin.uid));
+      await remove(ref(database, 'users/' + admin.uid));
       setInfo('Admin access removed.');
     } catch (err: any) {
       setError(err.message || 'Failed to remove admin access.');
@@ -150,7 +158,7 @@ export const AdminManagement: React.FC = () => {
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, admin.email);
-      await updateDoc(doc(db, 'users', admin.uid), { mustResetPassword: true });
+      await update(ref(database, 'users/' + admin.uid), { mustResetPassword: true });
       setInfo(`Reset email sent to ${admin.email}`);
     } catch (err: any) {
       console.error('Reset admin password error:', err);

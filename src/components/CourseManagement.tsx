@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  collection,
+  ref,
   query,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  setDoc,
-  doc,
-  onSnapshot,
-  where
-} from 'firebase/firestore';
+  get,
+  push,
+  update,
+  remove,
+  set,
+  onValue,
+  orderByChild,
+  equalTo
+} from 'firebase/database';
 import {
   BookOpen,
   Plus,
@@ -22,7 +22,7 @@ import {
   Check,
   Loader2
 } from 'lucide-react';
-import { db } from '../firebase';
+import { database } from '../firebase';
 import { Course, DEPARTMENTS, UserProfile } from '../types';
 import { cn } from '../lib/utils';
 import { formatEthiopianDate } from '../lib/ethiopianCalendar';
@@ -80,13 +80,26 @@ export const CourseManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    const unsubCourses = onSnapshot(collection(db, 'courses'), (snap) => {
-      setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() } as Course)));
+    const coursesRef = ref(database, 'courses');
+    const unsubCourses = onValue(coursesRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        setCourses(Object.keys(data).map(key => ({ id: key, ...data[key] } as Course)));
+      } else {
+        setCourses([]);
+      }
       setLoading(false);
     });
 
-    const unsubAdmins = onSnapshot(query(collection(db, 'users'), where('role', '==', 'admin')), (snap) => {
-      setAdmins(snap.docs.map(d => d.data() as UserProfile));
+    const adminsRef = ref(database, 'users');
+    const adminsQuery = query(adminsRef, orderByChild('role'), equalTo('admin'));
+    const unsubAdmins = onValue(adminsQuery, (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        setAdmins(Object.keys(data).map(key => data[key] as UserProfile));
+      } else {
+        setAdmins([]);
+      }
     });
 
     return () => {
@@ -122,10 +135,10 @@ export const CourseManagement: React.FC = () => {
       };
 
       if (editingCourse) {
-        await updateDoc(doc(db, 'courses', editingCourse.id), courseData);
+        await update(ref(database, 'courses/' + editingCourse.id), courseData);
       } else {
-        const newCourseRef = doc(collection(db, 'courses'));
-        await setDoc(newCourseRef, { id: newCourseRef.id, ...courseData });
+        const newCourseRef = push(ref(database, 'courses'));
+        await set(newCourseRef, { id: newCourseRef.key, ...courseData });
       }
       setIsModalOpen(false);
       setEditingCourse(null);
@@ -144,7 +157,7 @@ export const CourseManagement: React.FC = () => {
 
   const deleteCourse = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
-      await deleteDoc(doc(db, 'courses', id));
+      await remove(ref(database, 'courses/' + id));
     }
   };
 

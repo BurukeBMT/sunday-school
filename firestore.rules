@@ -1,102 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: users
-    // Fields: uid, email, role, name, assignedCourses
-    //
-    // Collection: students
-    // Fields: id, fullName, phone, email, department, qrToken, createdAt
-    //
-    // Collection: courses
-    // Fields: id, name, department, schedule, adminIds
-    //
-    // Collection: attendance_logs
-    // Fields: id, studentId, courseId, department, date, time, adminId
-    // ===============================================================
-
-    // Helper Functions
-    function isAuthenticated() {
-      return request.auth != null;
+    match /{document=**} {
+      allow read, write: if true;
     }
-
-    function DEPARTMENTS() {
-      return ['Computer Science', 'Engineering', 'Business', 'Mathematics', 'Physics', 'Chemistry', 'Biology'];
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.email == "burukmaedot16@gmail.com" ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'])
-      );
-    }
-
-    function isSuperAdmin() {
-      return isAuthenticated() && 
-        (request.auth.token.email == "burukmaedot16@gmail.com" || 
-         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin'));
-    }
-
-    function isCourseAdmin(courseId) {
-      return isAdmin() && 
-        (isSuperAdmin() || courseId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.assignedCourses);
-    }
-
-    // Validation Functions
-    function isValidUser(data) {
-      return data.uid is string && data.email is string && data.role in ['admin', 'super_admin'];
-    }
-
-    function isValidStudent(data) {
-      return data.id is string && data.fullName is string && data.phone is string && 
-             DEPARTMENTS().hasAny([data.department]) && data.qrToken is string && data.createdAt is string &&
-             (!('email' in data) || data.email is string);
-    }
-
-    function isValidCourse(data) {
-      return data.id is string && data.name is string && data.department is string;
-    }
-
-    function isValidAttendanceLog(data) {
-      return data.studentId is string && data.courseId is string && 
-             data.department is string && data.date is string && 
-             data.time is string && data.adminId is string;
-    }
-
-    // Rules
-    match /users/{uid} {
-      allow read: if isAuthenticated() && (
-        request.auth.uid == uid || 
-        isSuperAdmin() ||
-        (resource.data.email.toLowerCase() == request.auth.token.email.toLowerCase() && resource.data.role in ['admin', 'super_admin'])
-      );
-      allow create: if (isAuthenticated() && request.auth.uid == uid && isValidUser(request.resource.data)) || 
-                    (isSuperAdmin() && isValidUser(request.resource.data));
-      allow update: if (isSuperAdmin() || (isAuthenticated() && request.auth.uid == uid)) && isValidUser(request.resource.data);
-      allow delete: if isSuperAdmin();
-    }
-
-    match /students/{studentId} {
-      allow read, create, update, delete: if isAdmin();
-    }
-
-    match /courses/{courseId} {
-      allow read: if isAdmin();
-      allow create: if isSuperAdmin() && isValidCourse(request.resource.data);
-      allow update: if isSuperAdmin() && isValidCourse(request.resource.data);
-      allow delete: if isSuperAdmin();
-    }
-
-    match /attendance_logs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin() && isValidAttendanceLog(request.resource.data);
-      allow update: if isSuperAdmin();
-      allow delete: if isSuperAdmin();
-    }
+  }
+}
   }
 }

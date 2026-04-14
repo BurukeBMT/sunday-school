@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updatePassword } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
+import { ref, update } from 'firebase/database';
 import { useAuth } from '../contexts/AuthContext';
-import { auth, db } from '../firebase';
+import { auth, database } from '../firebase';
 import { Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const ResetPassword: React.FC = () => {
@@ -39,7 +39,7 @@ export const ResetPassword: React.FC = () => {
         try {
             await updatePassword(user, password);
             if (profile) {
-                await updateDoc(doc(db, 'users', user.uid), {
+                await update(ref(database, 'users/' + user.uid), {
                     mustResetPassword: false,
                 });
             }

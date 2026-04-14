@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDoc, getDocs, collection, query, where, deleteDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { ref, set, get, push, remove, update, query, orderByChild, equalTo } from 'firebase/database';
+import { auth, database } from '../firebase';
 import { UserProfile } from '../types';
 import { findLocalAdminByEmail } from '../lib/adminStore';
 
@@ -45,8 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
 
           try {
-            const docRef = doc(db, 'users', user.uid);
-            await setDoc(docRef, superAdminProfile, { merge: true });
+            const userRef = ref(database, 'users/' + user.uid);
+            await set(userRef, superAdminProfile);
           } catch (error) {
             console.warn('Could not persist superadmin profile to Firestore:', error);
           }
@@ -57,11 +57,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // First try to get profile by real UID
-        const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
+        const userRef = ref(database, 'users/' + user.uid);
+        const snapshot = await get(userRef);
 
-        if (docSnap.exists()) {
-          const profile = docSnap.data() as UserProfile;
+        if (snapshot.exists()) {
+          const profile = snapshot.val() as UserProfile;
           const normalizedRole = profile.role === 'super_admin' ? 'superadmin' : profile.role;
 
           if (normalizedRole === 'admin' || normalizedRole === 'superadmin') {
@@ -89,28 +89,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          // Check if there's an admin record with this email (created via AdminManagement in Firestore)
-          const q = query(collection(db, 'users'), where('email', '==', userEmail), where('role', '==', 'admin'));
-          const querySnap = await getDocs(q);
+          // Check if there's an admin record with this email (created via AdminManagement)
+          const usersRef = ref(database, 'users');
+          const emailQuery = query(usersRef, orderByChild('email'), equalTo(userEmail));
+          const querySnap = await get(emailQuery);
 
-          if (!querySnap.empty) {
-            const adminDoc = querySnap.docs[0];
-            const adminData = adminDoc.data() as UserProfile;
+          if (querySnap.exists()) {
+            const users = querySnap.val();
+            const adminKey = Object.keys(users).find(key => users[key].role === 'admin');
+            if (adminKey) {
+              const adminData = users[adminKey] as UserProfile;
 
-            // Update the admin record with the real Firebase Auth UID
-            const updatedProfile: UserProfile = {
-              ...adminData,
-              uid: user.uid,
-              name: user.displayName || adminData.name
-            };
+              // Update the admin record with the real Firebase Auth UID
+              const updatedProfile: UserProfile = {
+                ...adminData,
+                uid: user.uid,
+                name: user.displayName || adminData.name
+              };
 
-            await setDoc(docRef, updatedProfile);
-            await deleteDoc(adminDoc.ref); // Remove the old record
+              await set(userRef, updatedProfile);
+              await remove(ref(database, 'users/' + adminKey)); // Remove the old record
 
-            setProfile(updatedProfile);
-          } else {
-            setProfile(null);
+              setProfile(updatedProfile);
+              setLoading(false);
+              return;
+            }
           }
+
+          setProfile(null);
         }
       } catch (error) {
         console.error('Auth error:', error);

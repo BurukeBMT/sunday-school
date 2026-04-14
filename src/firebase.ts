@@ -1,15 +1,14 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, getDocFromServer, doc } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 console.log('Firebase initialized with config:', {
-  projectId: firebaseConfig.projectId,
-  databaseId: firebaseConfig.firestoreDatabaseId
+  projectId: firebaseConfig.projectId
 });
 
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+export const database = getDatabase(app);
 export const auth = getAuth(app);
 
 export enum OperationType {
@@ -55,12 +54,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  
+
   // Check for common connection errors
   if (errInfo.error.includes('unavailable') || errInfo.error.includes('offline')) {
     console.warn('Firestore is currently unavailable. The app will operate in offline mode.');
   }
-  
+
   throw new Error(JSON.stringify(errInfo));
 }
 
@@ -70,7 +69,7 @@ async function testConnection() {
     await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('Firestore connection successful');
   } catch (error) {
-    if(error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
+    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
       console.error("Firestore connection failed: The backend is unreachable. Please check your network or Firebase configuration.");
     } else {
       // Silence the "Missing or insufficient permissions" warning as it's expected for the test document

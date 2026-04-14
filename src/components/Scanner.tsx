@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import {
-  collection,
+  ref,
   query,
-  where,
-  getDocs,
-  addDoc,
-  doc,
-  getDoc,
-  serverTimestamp
-} from 'firebase/firestore';
+  orderByChild,
+  equalTo,
+  get,
+  push,
+  set
+} from 'firebase/database';
 import {
   QrCode,
   CheckCircle2,
@@ -19,7 +18,7 @@ import {
   BookOpen,
   AlertCircle
 } from 'lucide-react';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { database, handleFirestoreError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Course, AttendanceLog } from '../types';
@@ -40,19 +39,27 @@ export const Scanner: React.FC = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const q = profile?.role === 'superadmin'
-          ? query(collection(db, 'courses'))
-          : query(collection(db, 'courses'), where('adminIds', 'array-contains', profile?.uid));
-
-        const snap = await getDocs(q);
-        const courseList = snap.docs.map(d => ({ id: d.id, ...d.data() } as Course));
-        setCourses(courseList);
-        if (courseList.length > 0) setSelectedCourse(courseList[0].id);
-      } catch (err) {
-        handleFirestoreError(err, OperationType.LIST, 'courses');
+        const coursesRef = ref(database, 'courses');
+        const snap = await get(coursesRef);
+        if (snap.exists()) {
+          const allCourses = snap.val();
+          let courseList: Course[] = [];
+          if (profile?.role === 'superadmin') {
+            courseList = Object.keys(allCourses).map(key => ({ id: key, ...allCourses[key] }));
+          } else {
+            courseList = Object.keys(allCourses)
+              .map(key => ({ id: key, ...allCourses[key] }))
+              .filter(course => course.adminIds && course.adminIds.includes(profile?.uid));
+          }
+          setCourses(courseList);
+          if (courseList.length > 0) setSelectedCourse(courseList[0].id);
+        }
+      } catch (error) {
+        handleFirestoreError(error, OperationType.LIST, 'courses');
       }
     };
-    fetchCourses();
+
+    if (profile) fetchCourses();
   }, [profile]);
 
   const startScanner = () => {
@@ -92,54 +99,56 @@ export const Scanner: React.FC = () => {
       const { id, token } = data;
 
       // 1. Validate Student
-      let studentDoc;
+      let studentSnap;
       try {
-        studentDoc = await getDoc(doc(db, 'students', id));
+        studentSnap = await get(ref(database, 'students/' + id));
       } catch (err) {
         handleFirestoreError(err, OperationType.GET, `students/${id}`);
       }
 
-      if (!studentDoc || !studentDoc.exists() || studentDoc.data().qrToken !== token) {
+      if (!studentSnap || !studentSnap.exists() || studentSnap.val().qrToken !== token) {
         setResult({ success: false, message: t.invalidQrCode });
         setLoading(false);
         return;
       }
 
-      const studentData = studentDoc.data();
+      const studentData = studentSnap.val();
       const today = format(new Date(), 'yyyy-MM-dd');
 
       // 2. Check Duplicate
       let duplicateSnap;
       try {
-        const q = query(
-          collection(db, 'attendance_logs'),
-          where('studentId', '==', id),
-          where('courseId', '==', selectedCourse),
-          where('date', '==', today)
-        );
-        duplicateSnap = await getDocs(q);
+        const logsRef = ref(database, 'attendance_logs');
+        duplicateSnap = await get(logsRef);
       } catch (err) {
         handleFirestoreError(err, OperationType.LIST, 'attendance_logs');
       }
 
-      if (duplicateSnap && !duplicateSnap.empty) {
-        setResult({
-          success: false,
-          message: t.attendanceAlreadyRecorded,
-          studentName: studentData.fullName
-        });
-        setLoading(false);
-        return;
+      if (duplicateSnap && duplicateSnap.exists()) {
+        const logs = duplicateSnap.val();
+        const isDuplicate = Object.values(logs).some((log: any) =>
+          log.studentId === id && log.courseId === selectedCourse && log.date === today
+        );
+        if (isDuplicate) {
+          setResult({
+            success: false,
+            message: t.attendanceAlreadyRecorded,
+            studentName: studentData.fullName
+          });
+          setLoading(false);
+          return;
+        }
       }
       try {
-        await addDoc(collection(db, 'attendance_logs'), {
+        const course = courses.find(c => c.id === selectedCourse);
+        await push(ref(database, 'attendance_logs'), {
           studentId: id,
           courseId: selectedCourse,
           department: course?.department || '',
           date: today,
           time: format(new Date(), 'HH:mm:ss'),
           adminId: profile?.uid,
-          createdAt: serverTimestamp()
+          createdAt: Date.now()
         });
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, 'attendance_logs');

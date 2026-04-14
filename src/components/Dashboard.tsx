@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  collection,
+  ref,
   query,
-  getDocs,
-  where,
-  orderBy,
-  limit,
-  onSnapshot
-} from 'firebase/firestore';
+  get,
+  orderByChild,
+  equalTo,
+  onValue
+} from 'firebase/database';
 import {
   Users,
   CheckCircle,
@@ -28,7 +27,7 @@ import {
   PieChart,
   Pie
 } from 'recharts';
-import { db } from '../firebase';
+import { database } from '../firebase';
 import { Student, AttendanceLog, DEPARTMENTS } from '../types';
 import { format, subDays, startOfDay } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -47,55 +46,59 @@ export const Dashboard: React.FC = () => {
   const { t } = useLanguage();
 
   useEffect(() => {
-    // Real-time stats
-    const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
-      setStats(prev => ({ ...prev, totalStudents: snap.size }));
+    const studentsRef = ref(database, 'students');
+    const unsubStudents = onValue(studentsRef, (snap) => {
+      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+      setStats(prev => ({ ...prev, totalStudents: count }));
 
-      const counts = DEPARTMENTS.map(dept => ({
-        name: dept,
-        value: snap.docs.filter(d => d.data().department === dept).length
-      }));
-      setDeptData(counts);
+      if (snap.exists()) {
+        const students = snap.val();
+        const counts = DEPARTMENTS.map(dept => ({
+          name: dept,
+          value: Object.values(students).filter((s: any) => s.department === dept).length
+        }));
+        setDeptData(counts);
+      }
     });
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const unsubToday = onSnapshot(
-      query(collection(db, 'attendance_logs'), where('date', '==', today)),
-      (snap) => {
-        setStats(prev => ({ ...prev, todayAttendance: snap.size }));
-      }
-    );
+    const logsRef = ref(database, 'attendance_logs');
+    const unsubLogs = onValue(logsRef, (snap) => {
+      if (snap.exists()) {
+        const logs = snap.val();
+        const allLogs = Object.keys(logs).map(key => ({ id: key, ...logs[key] } as AttendanceLog));
 
-    const unsubCourses = onSnapshot(collection(db, 'courses'), (snap) => {
-      setStats(prev => ({ ...prev, activeCourses: snap.size }));
+        // Today attendance
+        const todayCount = allLogs.filter(log => log.date === today).length;
+        setStats(prev => ({ ...prev, todayAttendance: todayCount }));
+
+        // Recent logs
+        const recent = allLogs
+          .sort((a, b) => new Date(b.date + ' ' + b.time).getTime() - new Date(a.date + ' ' + a.time).getTime())
+          .slice(0, 5);
+        setRecentLogs(recent);
+
+        // Daily trends (last 7 days)
+        const trends = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
+          const count = allLogs.filter(log => log.date === date).length;
+          trends.push({ date: format(subDays(new Date(), i), 'MMM dd'), count });
+        }
+        setDailyData(trends);
+      }
     });
 
-    // Recent logs
-    const unsubLogs = onSnapshot(
-      query(collection(db, 'attendance_logs'), orderBy('date', 'desc'), orderBy('time', 'desc'), limit(5)),
-      (snap) => {
-        setRecentLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as AttendanceLog)));
-      }
-    );
-
-    // Daily trends (last 7 days)
-    const fetchTrends = async () => {
-      const trends = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
-        const q = query(collection(db, 'attendance_logs'), where('date', '==', date));
-        const snap = await getDocs(q);
-        trends.push({ date: format(subDays(new Date(), i), 'MMM dd'), count: snap.size });
-      }
-      setDailyData(trends);
-    };
-    fetchTrends();
+    const coursesRef = ref(database, 'courses');
+    const unsubCourses = onValue(coursesRef, (snap) => {
+      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+      setStats(prev => ({ ...prev, activeCourses: count }));
+    });
 
     return () => {
       unsubStudents();
-      unsubToday();
-      unsubCourses();
       unsubLogs();
+      unsubCourses();
     };
   }, []);
 
