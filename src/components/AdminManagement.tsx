@@ -136,7 +136,13 @@ export const AdminManagement: React.FC = () => {
       setDerivedName('');
     } catch (err: any) {
       console.error('Add admin error:', err);
-      setError(err.message || 'Failed to add admin. Please try again.');
+      if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/password sign-in is disabled in Firebase Auth. Enable it in the Firebase console.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered. Use a different email or reset the password.');
+      } else {
+        setError(err.message || 'Failed to add admin. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

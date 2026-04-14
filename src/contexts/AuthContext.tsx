@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userRef = ref(database, 'users/' + user.uid);
             await set(userRef, superAdminProfile);
           } catch (error) {
-            console.warn('Could not persist superadmin profile to Firestore:', error);
+            console.warn('Could not persist superadmin profile to Realtime Database:', error);
           }
 
           setProfile(superAdminProfile);
@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           const userEmail = user.email?.trim().toLowerCase();
 
-          // First, try to resolve a local admin record if Firestore is not used for admin storage.
+          // First, try to resolve a local admin record if Realtime Database is not used for admin storage.
           const localAdmin = userEmail ? findLocalAdminByEmail(userEmail) : undefined;
           if (localAdmin) {
             setProfile({

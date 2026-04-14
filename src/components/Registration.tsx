@@ -10,10 +10,10 @@ import {
   Copy,
   Loader2
 } from 'lucide-react';
-import { collection, addDoc, getDocs, query, orderBy, limit, setDoc, doc } from 'firebase/firestore';
+import { ref, get, set, query, orderByChild, limitToLast } from 'firebase/database';
 import { parse } from 'csv-parse/browser/esm';
 import { printIdCard } from '../lib/printIdCard';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { database, handleDatabaseError, OperationType } from '../firebase';
 import { DEPARTMENTS, Student } from '../types';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
@@ -57,14 +57,15 @@ export const Registration: React.FC = () => {
   const generateStudentId = async () => {
     try {
       console.log('Generating student ID... Current profile:', profile);
-      const q = query(collection(db, 'students'), orderBy('id', 'desc'), limit(1));
-      const snap = await getDocs(q);
-      console.log('Student ID query snap empty:', snap.empty);
+      const studentsRef = ref(database, 'students');
+      const q = query(studentsRef, orderByChild('id'), limitToLast(1));
+      const snap = await get(q);
       let nextNum = 1;
-      if (!snap.empty) {
-        const lastId = snap.docs[0].data().id;
+      if (snap.exists()) {
+        const data = snap.val();
+        const lastId = Object.values(data).map((item: any) => item.id).sort().pop();
         console.log('Last student ID found:', lastId);
-        const match = lastId.match(/\d+$/);
+        const match = lastId?.match(/\d+$/);
         if (match) nextNum = parseInt(match[0]) + 1;
       }
       const newId = `FHST${nextNum.toString().padStart(5, '0')}`;
@@ -72,7 +73,7 @@ export const Registration: React.FC = () => {
       return newId;
     } catch (err) {
       console.error('Error in generateStudentId:', err);
-      handleFirestoreError(err, OperationType.LIST, 'students');
+      handleDatabaseError(err, OperationType.LIST, 'students');
       return '';
     }
   };
@@ -106,7 +107,7 @@ export const Registration: React.FC = () => {
       };
 
       console.log('Registering student:', student);
-      await setDoc(doc(db, 'students', studentId), student);
+      await set(ref(database, 'students/' + studentId), student);
       console.log('Student registered successfully');
       setSuccess(student);
       setForm({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0] });
@@ -142,11 +143,13 @@ export const Registration: React.FC = () => {
         // Get max ID once
         let maxNum = 0;
         try {
-          const q = query(collection(db, 'students'), orderBy('id', 'desc'), limit(1));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            const lastId = snap.docs[0].data().id as string;
-            const match = lastId.match(/\d+$/);
+          const studentsRef = ref(database, 'students');
+          const q = query(studentsRef, orderByChild('id'), limitToLast(1));
+          const snap = await get(q);
+          if (snap.exists()) {
+            const data = snap.val();
+            const lastId = Object.values(data).map((item: any) => item.id).sort().pop();
+            const match = lastId?.match(/\d+$/);
             if (match) maxNum = parseInt(match[0]);
           }
         } catch (e) {
@@ -197,7 +200,7 @@ export const Registration: React.FC = () => {
               qrToken,
               createdAt: new Date().toISOString()
             };
-            await setDoc(doc(db, 'students', studentId), student);
+            await set(ref(database, 'students/' + studentId), student);
             successCount++;
           } catch (err: any) {
             const rowName = fullName || 'Unknown';

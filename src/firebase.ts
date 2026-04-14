@@ -20,7 +20,7 @@ export enum OperationType {
   WRITE = 'write',
 }
 
-export interface FirestoreErrorInfo {
+export interface DatabaseErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
@@ -34,8 +34,8 @@ export interface FirestoreErrorInfo {
   }
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
+export function handleDatabaseError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: DatabaseErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
       userId: auth.currentUser?.uid,
@@ -53,32 +53,16 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  console.error('Realtime Database Error: ', JSON.stringify(errInfo));
 
   // Check for common connection errors
   if (errInfo.error.includes('unavailable') || errInfo.error.includes('offline')) {
-    console.warn('Firestore is currently unavailable. The app will operate in offline mode.');
+    console.warn('Realtime Database is currently unavailable. The app will operate in offline mode.');
   }
 
   throw new Error(JSON.stringify(errInfo));
 }
 
-async function testConnection() {
-  try {
-    console.log('Testing Firestore connection...');
-    await getDocFromServer(doc(db, 'test', 'connection'));
-    console.log('Firestore connection successful');
-  } catch (error) {
-    if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
-      console.error("Firestore connection failed: The backend is unreachable. Please check your network or Firebase configuration.");
-    } else {
-      // Silence the "Missing or insufficient permissions" warning as it's expected for the test document
-      if (error instanceof Error && error.message.includes('Missing or insufficient permissions')) {
-        console.log('Firestore connection verified (permissions active)');
-      } else {
-        console.warn('Firestore connection test info:', error);
-      }
-    }
-  }
-}
-testConnection();
+// Realtime Database does not require a Firestore connection test here.
+// The app will use the Realtime Database instance directly.
+

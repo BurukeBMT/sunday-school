@@ -18,8 +18,7 @@ import {
   BookOpen,
   AlertCircle
 } from 'lucide-react';
-import { database, handleFirestoreError, OperationType } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
+import { database, handleDatabaseError, OperationType } from '../firebase'; import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Course, AttendanceLog } from '../types';
 import { format } from 'date-fns';
@@ -55,7 +54,7 @@ export const Scanner: React.FC = () => {
           if (courseList.length > 0) setSelectedCourse(courseList[0].id);
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'courses');
+        handleDatabaseError(error, OperationType.LIST, 'courses');
       }
     };
 
@@ -103,7 +102,7 @@ export const Scanner: React.FC = () => {
       try {
         studentSnap = await get(ref(database, 'students/' + id));
       } catch (err) {
-        handleFirestoreError(err, OperationType.GET, `students/${id}`);
+        handleDatabaseError(err, OperationType.GET, `students/${id}`);
       }
 
       if (!studentSnap || !studentSnap.exists() || studentSnap.val().qrToken !== token) {
@@ -121,7 +120,7 @@ export const Scanner: React.FC = () => {
         const logsRef = ref(database, 'attendance_logs');
         duplicateSnap = await get(logsRef);
       } catch (err) {
-        handleFirestoreError(err, OperationType.LIST, 'attendance_logs');
+        handleDatabaseError(err, OperationType.LIST, 'attendance_logs');
       }
 
       if (duplicateSnap && duplicateSnap.exists()) {
@@ -151,7 +150,7 @@ export const Scanner: React.FC = () => {
           createdAt: Date.now()
         });
       } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, 'attendance_logs');
+        handleDatabaseError(err, OperationType.WRITE, 'attendance_logs');
       }
 
       setResult({

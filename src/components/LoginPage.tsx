@@ -25,7 +25,15 @@ export const LoginPage: React.FC = () => {
       await loginWithEmailPassword(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      if (err.code === 'auth/user-not-found') {
+        setError('No account found with that email.');
+      } else if (err.code === 'auth/wrong-password') {
+        setError('Incorrect password.');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/password sign-in is disabled in Firebase Auth. Enable it in the Firebase console.');
+      } else {
+        setError(err.message || 'Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -44,7 +52,13 @@ export const LoginPage: React.FC = () => {
       await sendPasswordResetEmail(auth, email.trim().toLowerCase());
       setMessage('Password reset email sent. Check your inbox.');
     } catch (err: any) {
-      setError(err.message || 'Failed to send reset email.');
+      if (err.code === 'auth/user-not-found') {
+        setError('No account found with that email.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else {
+        setError(err.message || 'Failed to send reset email.');
+      }
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
-import { auth, db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, database } from '../firebase';
+import { ref, get } from 'firebase/database';
 import { UserProfile } from '../types';
 
 export async function authGuard(): Promise<UserProfile> {
@@ -9,14 +9,14 @@ export async function authGuard(): Promise<UserProfile> {
         throw new Error('Not authenticated');
     }
 
-    const userDocRef = doc(db, 'users', currentUser.uid);
-    const userDoc = await getDoc(userDocRef);
+    const userRef = ref(database, 'users/' + currentUser.uid);
+    const userSnap = await get(userRef);
 
-    if (!userDoc.exists()) {
-        throw new Error('User profile not found in Firestore');
+    if (!userSnap.exists()) {
+        throw new Error('User profile not found in Realtime Database');
     }
 
-    const profile = userDoc.data() as UserProfile;
+    const profile = userSnap.val() as UserProfile;
     const normalizedRole = profile.role === 'super_admin' ? 'superadmin' : profile.role;
 
     if (normalizedRole !== 'admin' && normalizedRole !== 'superadmin') {
