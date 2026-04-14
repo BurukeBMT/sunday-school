@@ -56,7 +56,6 @@ export const Registration: React.FC = () => {
 
   const generateStudentId = async () => {
     try {
-      console.log('Generating student ID... Current profile:', profile);
       const studentsRef = ref(database, 'students');
       const q = query(studentsRef, orderByChild('id'), limitToLast(1));
       const snap = await get(q);
@@ -64,15 +63,12 @@ export const Registration: React.FC = () => {
       if (snap.exists()) {
         const data = snap.val();
         const lastId = Object.values(data).map((item: any) => item.id).sort().pop();
-        console.log('Last student ID found:', lastId);
         const match = lastId?.match(/\d+$/);
         if (match) nextNum = parseInt(match[0]) + 1;
       }
       const newId = `FHST${nextNum.toString().padStart(5, '0')}`;
-      console.log('Generated new ID:', newId);
       return newId;
     } catch (err) {
-      console.error('Error in generateStudentId:', err);
       handleDatabaseError(err, OperationType.LIST, 'students');
       return '';
     }
@@ -90,7 +86,6 @@ export const Registration: React.FC = () => {
     }
 
     try {
-      console.log('Starting registration... Profile:', profile);
       const studentId = await generateStudentId();
       if (!studentId) throw new Error('Failed to generate student ID');
 
@@ -106,13 +101,10 @@ export const Registration: React.FC = () => {
         createdAt: new Date().toISOString()
       };
 
-      console.log('Registering student:', student);
       await set(ref(database, 'students/' + studentId), student);
-      console.log('Student registered successfully');
       setSuccess(student);
       setForm({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0] });
     } catch (err: any) {
-      console.error('Registration error details:', err);
       setError('Registration failed. Check console for details.');
     } finally {
       setLoading(false);

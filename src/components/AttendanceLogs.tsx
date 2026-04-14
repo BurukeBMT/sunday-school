@@ -5,7 +5,9 @@ import {
   get,
   orderByChild,
   equalTo,
-  onValue
+  onValue,
+  DatabaseReference,
+  Query
 } from 'firebase/database';
 import {
   Search,
@@ -65,7 +67,7 @@ export const AttendanceLogs: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     const logsRef = ref(database, 'attendance_logs');
-    let q = logsRef;
+    let q: DatabaseReference | Query = logsRef;
 
     if (dateFilter) {
       q = query(logsRef, orderByChild('date'), equalTo(dateFilter));

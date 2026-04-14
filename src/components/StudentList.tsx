@@ -42,7 +42,7 @@ export const StudentList: React.FC = () => {
         const data = snap.val();
         const studentList = Object.keys(data).map(key => ({ id: key, ...data[key] } as Student));
         // Sort by createdAt desc
-        studentList.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        studentList.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
         setStudents(studentList);
       } else {
         setStudents([]);
