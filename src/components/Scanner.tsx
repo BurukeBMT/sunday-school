@@ -32,8 +32,7 @@ export const Scanner: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<string>('');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; studentName?: string } | null>(null);
-  const [loading, setLoading] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const [scannerInitializing, setScannerInitializing] = useState(false);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -61,66 +60,166 @@ export const Scanner: React.FC = () => {
     if (profile) fetchCourses();
   }, [profile]);
 
-  const startScanner = () => {
+  const startScanner = async () => {
     if (!selectedCourse) return;
     setScanning(true);
+    setScannerInitializing(true);
     setResult(null);
 
-    setTimeout(() => {
-      scannerRef.current = new Html5QrcodeScanner(
-        "reader",
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-        },
-        /* verbose= */ false
-      );
-      scannerRef.current.render(onScanSuccess, onScanFailure);
-    }, 100);
+    // Check if running over HTTPS (required for camera access)
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      setResult({ success: false, message: 'Camera access requires HTTPS. Please access the app over a secure connection.' });
+      setScanning(false);
+      setScannerInitializing(false);
+      return;
+    }
+
+    try {
+      // Check if camera is available
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasCamera = devices.some(device => device.kind === 'videoinput');
+
+      if (!hasCamera) {
+        setResult({ success: false, message: 'No camera found on this device' });
+        setScanning(false);
+        return;
+      }
+
+      // Request camera permission
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+        stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+      } catch (permissionError) {
+        console.error('Camera permission denied:', permissionError);
+        setResult({ success: false, message: 'Camera permission denied. Please allow camera access and try again.' });
+        setScanning(false);
+        return;
+      }
+
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        try {
+          scannerRef.current = new Html5QrcodeScanner(
+            "reader",
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+              supportedScanTypes: ["qr_code"],
+              experimentalFeatures: {
+                useBarCodeDetectorIfSupported: false
+              }
+            },
+            /* verbose= */ false
+          );
+
+          scannerRef.current.render(onScanSuccess, onScanFailure)
+            .then(() => {
+              console.log('Scanner started successfully');
+              setScannerInitializing(false);
+            })
+            .catch((error) => {
+              console.error('Failed to start scanner:', error);
+              setResult({ success: false, message: 'Failed to start camera scanner. Please try again.' });
+              setScanning(false);
+              setScannerInitializing(false);
+            });
+        } catch (error) {
+          console.error('Scanner initialization error:', error);
+          setResult({ success: false, message: 'Failed to initialize scanner. Please refresh the page and try again.' });
+          setScanning(false);
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Camera check error:', error);
+      setResult({ success: false, message: 'Unable to access camera. Please check your device settings.' });
+      setScanning(false);
+    }
   };
 
   const stopScanner = () => {
     if (scannerRef.current) {
-      scannerRef.current.clear().catch(err => console.error("Failed to clear scanner", err));
+      try {
+        scannerRef.current.clear()
+          .then(() => {
+            console.log('Scanner stopped successfully');
+          })
+          .catch(err => {
+            console.error("Failed to clear scanner", err);
+          });
+      } catch (error) {
+        console.error('Error stopping scanner:', error);
+      }
       scannerRef.current = null;
     }
     setScanning(false);
+    setScannerInitializing(false);
   };
+
+  // Cleanup scanner on unmount
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        try {
+          scannerRef.current.clear().catch(err => console.error("Failed to clear scanner on unmount", err));
+        } catch (error) {
+          console.error('Error clearing scanner on unmount:', error);
+        }
+      }
+    };
+  }, []);
 
   const onScanSuccess = async (decodedText: string) => {
     if (loading) return;
     setLoading(true);
-    stopScanner();
 
     try {
       const data = JSON.parse(decodedText);
       const { id, token } = data;
+
+      if (!id || !token) {
+        throw new Error('Invalid QR code format');
+      }
 
       // 1. Validate Student
       let studentSnap;
       try {
         studentSnap = await get(ref(database, 'students/' + id));
       } catch (err) {
-        handleDatabaseError(err, OperationType.GET, `students/${id}`);
+        console.error('Error fetching student:', err);
+        setResult({ success: false, message: 'Error validating student. Please try again.' });
+        setLoading(false);
+        return;
       }
 
-      if (!studentSnap || !studentSnap.exists() || studentSnap.val().qrToken !== token) {
+      if (!studentSnap || !studentSnap.exists()) {
         setResult({ success: false, message: t.invalidQrCode });
         setLoading(false);
         return;
       }
 
       const studentData = studentSnap.val();
+      if (studentData.qrToken !== token) {
+        setResult({ success: false, message: t.invalidQrCode });
+        setLoading(false);
+        return;
+      }
+
       const today = format(new Date(), 'yyyy-MM-dd');
 
       // 2. Check Duplicate
       let duplicateSnap;
       try {
         const logsRef = ref(database, 'attendance_logs');
-        duplicateSnap = await get(logsRef);
+        const duplicateQuery = query(logsRef, orderByChild('studentId'), equalTo(id));
+        duplicateSnap = await get(duplicateQuery);
       } catch (err) {
-        handleDatabaseError(err, OperationType.LIST, 'attendance_logs');
+        console.error('Error checking duplicates:', err);
+        setResult({ success: false, message: 'Error checking attendance records. Please try again.' });
+        setLoading(false);
+        return;
       }
 
       if (duplicateSnap && duplicateSnap.exists()) {
@@ -138,6 +237,8 @@ export const Scanner: React.FC = () => {
           return;
         }
       }
+
+      // 3. Record Attendance
       try {
         const course = courses.find(c => c.id === selectedCourse);
         await push(ref(database, 'attendance_logs'), {
@@ -150,7 +251,10 @@ export const Scanner: React.FC = () => {
           createdAt: Date.now()
         });
       } catch (err) {
-        handleDatabaseError(err, OperationType.WRITE, 'attendance_logs');
+        console.error('Error recording attendance:', err);
+        setResult({ success: false, message: 'Error recording attendance. Please try again.' });
+        setLoading(false);
+        return;
       }
 
       setResult({
@@ -158,16 +262,39 @@ export const Scanner: React.FC = () => {
         message: t.attendanceRecorded,
         studentName: studentData.fullName
       });
+
+      // Stop scanner after successful scan
+      stopScanner();
+
     } catch (err) {
+      console.error('Scan processing error:', err);
       setResult({ success: false, message: t.invalidQrCode });
+      stopScanner();
     } finally {
       setLoading(false);
     }
   };
 
   const onScanFailure = (error: any) => {
-    // Silent failure for continuous scanning
+    // Silent failure for continuous scanning - only log if it's a real error
+    if (error && typeof error === 'string' && !error.includes('No QR code found')) {
+      console.warn('QR scan error:', error);
+    }
   };
+
+  // Auto-stop scanner after 5 minutes to prevent battery drain
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (scanning) {
+      timeoutId = setTimeout(() => {
+        stopScanner();
+        setResult({ success: false, message: 'Scanner timed out after 5 minutes. Please restart if needed.' });
+      }, 5 * 60 * 1000); // 5 minutes
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [scanning]);
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -187,10 +314,10 @@ export const Scanner: React.FC = () => {
           ) : (
             <div className="relative">
               <select
-                disabled={scanning}
+                disabled={scanning || scannerInitializing}
                 value={selectedCourse}
                 onChange={e => setSelectedCourse(e.target.value)}
-                className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10"
+                className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {courses.map(course => (
                   <option key={course.id} value={course.id}>{course.name} ({course.department})</option>
@@ -221,9 +348,15 @@ export const Scanner: React.FC = () => {
                 </div>
                 <button
                   onClick={startScanner}
-                  className="bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] transition-all shadow-xl"
+                  disabled={scanning || scannerInitializing}
+                  className="bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl"
                 >
-                  Start Scanner
+                  {scannerInitializing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={16} />
+                      Initializing Camera...
+                    </div>
+                  ) : scanning ? 'Starting Scanner...' : 'Start Scanner'}
                 </button>
               </motion.div>
             ) : (
