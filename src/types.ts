@@ -24,19 +24,24 @@ export interface Student {
 export interface Course {
   id: string;
   name: string;
-  department: string;
+  departments: string[]; // Changed from single department to multiple departments
   schedule?: string;
   adminIds: string[];
+  attendanceStartTime?: string; // New: when attendance can start (HH:mm format)
+  attendanceEndTime?: string;   // New: when attendance can end (HH:mm format)
 }
 
 export interface AttendanceLog {
   id: string;
   studentId: string;
+  studentName?: string;
   courseId: string;
   department: string;
   date: string;
   time: string;
-  adminId: string;
+  markedBy: string;
+  method?: 'qr' | 'manual';
+  createdAt?: number;
 }
 
 export const DEPARTMENTS = [

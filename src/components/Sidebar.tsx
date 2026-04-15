@@ -10,7 +10,8 @@ import {
   ClipboardList,
   Menu,
   X,
-  ShieldCheck
+  ShieldCheck,
+  UserCheck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { path: '/courses', label: t.courses, icon: BookOpen, hidden: !isSuperAdmin },
     { path: '/admins', label: t.admins, icon: ShieldCheck, hidden: !isSuperAdmin },
     { path: '/scanner', label: t.scanner, icon: QrCode },
+    { path: '/manual-attendance', label: t.manualAttendance || 'Manual Attendance', icon: UserCheck },
     { path: '/attendance', label: t.logs, icon: ClipboardList },
   ];
 

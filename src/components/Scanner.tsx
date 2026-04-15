@@ -16,11 +16,14 @@ import {
   Loader2,
   Camera,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  Users
 } from 'lucide-react';
-import { database, handleDatabaseError, OperationType } from '../firebase'; import { useAuth } from '../contexts/AuthContext';
+import { database, handleDatabaseError, OperationType } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Course, AttendanceLog } from '../types';
+import { DEPARTMENTS } from '../types';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -33,6 +36,8 @@ export const Scanner: React.FC = () => {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; studentName?: string } | null>(null);
   const [scannerInitializing, setScannerInitializing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -74,6 +79,22 @@ export const Scanner: React.FC = () => {
       return;
     }
 
+    // Check if html5-qrcode is available and properly loaded
+    if (typeof Html5QrcodeScanner === 'undefined' || !Html5QrcodeScanner) {
+      setResult({ success: false, message: 'QR scanner library not loaded properly. Please refresh the page and try again.' });
+      setScanning(false);
+      setScannerInitializing(false);
+      return;
+    }
+
+    // Check if required methods exist
+    if (typeof Html5QrcodeScanner !== 'function') {
+      setResult({ success: false, message: 'QR scanner library is not compatible. Please try a different browser.' });
+      setScanning(false);
+      setScannerInitializing(false);
+      return;
+    }
+
     try {
       // Check if camera is available
       const devices = await navigator.mediaDevices.enumerateDevices();
@@ -82,6 +103,7 @@ export const Scanner: React.FC = () => {
       if (!hasCamera) {
         setResult({ success: false, message: 'No camera found on this device' });
         setScanning(false);
+        setScannerInitializing(false);
         return;
       }
 
@@ -95,43 +117,111 @@ export const Scanner: React.FC = () => {
         console.error('Camera permission denied:', permissionError);
         setResult({ success: false, message: 'Camera permission denied. Please allow camera access and try again.' });
         setScanning(false);
+        setScannerInitializing(false);
         return;
       }
 
       // Small delay to ensure DOM is ready
       setTimeout(() => {
-        try {
-          scannerRef.current = new Html5QrcodeScanner(
-            "reader",
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-              supportedScanTypes: ["qr_code"],
-              experimentalFeatures: {
-                useBarCodeDetectorIfSupported: false
-              }
-            },
-            /* verbose= */ false
-          );
+        const initializeScanner = async () => {
+          try {
+            // Check if reader element exists
+            const readerElement = document.getElementById('reader');
+            if (!readerElement) {
+              throw new Error('Scanner container element not found');
+            }
 
-          scannerRef.current.render(onScanSuccess, onScanFailure)
-            .then(() => {
-              console.log('Scanner started successfully');
-              setScannerInitializing(false);
-            })
-            .catch((error) => {
-              console.error('Failed to start scanner:', error);
-              setResult({ success: false, message: 'Failed to start camera scanner. Please try again.' });
-              setScanning(false);
-              setScannerInitializing(false);
+            // Try main scanner configuration first
+            try {
+              console.log('Creating main scanner...');
+              scannerRef.current = new Html5QrcodeScanner(
+                "reader",
+                {
+                  fps: 10,
+                  qrbox: { width: 250, height: 250 },
+                  formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                  experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: false
+                  },
+                  rememberLastUsedCamera: true,
+                  showTorchButtonIfSupported: true
+                },
+                /* verbose= */ false
+              );
+
+              // Check if scanner was created successfully
+              if (!scannerRef.current || typeof scannerRef.current.render !== 'function') {
+                throw new Error('Failed to create scanner object');
+              }
+
+              const renderPromise = scannerRef.current.render(onScanSuccess, onScanFailure);
+
+              // Ensure render returns a Promise
+              if (renderPromise && typeof renderPromise.then === 'function') {
+                await renderPromise;
+                console.log('Scanner started successfully');
+                setScannerInitializing(false);
+                return; // Success, exit function
+              } else {
+                // If render doesn't return a Promise, assume it worked
+                console.log('Scanner started successfully (no promise returned)');
+                setScannerInitializing(false);
+                return; // Success, exit function
+              }
+            } catch (mainScannerError) {
+              console.error('Main scanner failed:', mainScannerError);
+
+              // Try fallback scanner configuration
+              try {
+                console.log('Trying fallback scanner configuration...');
+                scannerRef.current = new Html5QrcodeScanner(
+                  "reader",
+                  {
+                    fps: 5,
+                    qrbox: { width: 200, height: 200 },
+                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+                  },
+                  /* verbose= */ true
+                );
+
+                // Check if fallback scanner was created successfully
+                if (!scannerRef.current || typeof scannerRef.current.render !== 'function') {
+                  throw new Error('Failed to create fallback scanner object');
+                }
+
+                const fallbackRenderPromise = scannerRef.current.render(onScanSuccess, onScanFailure);
+
+                // Ensure fallback render returns a Promise
+                if (fallbackRenderPromise && typeof fallbackRenderPromise.then === 'function') {
+                  await fallbackRenderPromise;
+                  console.log('Fallback scanner started successfully');
+                  setScannerInitializing(false);
+                  return; // Success, exit function
+                } else {
+                  // If render doesn't return a Promise, assume it worked
+                  console.log('Fallback scanner started successfully (no promise returned)');
+                  setScannerInitializing(false);
+                  return; // Success, exit function
+                }
+              } catch (fallbackError) {
+                console.error('Fallback scanner also failed:', fallbackError);
+                throw new Error('Both main and fallback scanners failed to initialize');
+              }
+            }
+          } catch (error: any) {
+            console.error('Scanner initialization error:', error);
+            const errorMessage = error.message || 'Unknown initialization error';
+            setResult({
+              success: false,
+              message: `Failed to initialize scanner: ${errorMessage}. Please try: 1) Refresh the page, 2) Allow camera permissions, 3) Try a different browser (Chrome recommended), or 4) Use your mobile device.`
             });
-        } catch (error) {
-          console.error('Scanner initialization error:', error);
-          setResult({ success: false, message: 'Failed to initialize scanner. Please refresh the page and try again.' });
-          setScanning(false);
-        }
-      }, 100);
+            setScanning(false);
+            setScannerInitializing(false);
+          }
+        };
+
+        initializeScanner();
+      }, 200); // Increased delay
     } catch (error) {
       console.error('Camera check error:', error);
       setResult({ success: false, message: 'Unable to access camera. Please check your device settings.' });
@@ -207,6 +297,21 @@ export const Scanner: React.FC = () => {
         return;
       }
 
+      // Check if student belongs to course departments
+      const course = courses.find(c => c.id === selectedCourse);
+      if (course) {
+        const courseDepartments = course.departments || [course.department];
+        if (!courseDepartments.includes(studentData.department)) {
+          setResult({
+            success: false,
+            message: `Student is not in the assigned departments (${courseDepartments.join(', ')}). Please scan a student from these departments.`,
+            studentName: studentData.fullName
+          });
+          setLoading(false);
+          return;
+        }
+      }
+
       const today = format(new Date(), 'yyyy-MM-dd');
 
       // 2. Check Duplicate
@@ -244,10 +349,11 @@ export const Scanner: React.FC = () => {
         await push(ref(database, 'attendance_logs'), {
           studentId: id,
           courseId: selectedCourse,
-          department: course?.department || '',
+          department: studentData.department, // Use student's actual department
           date: today,
           time: format(new Date(), 'HH:mm:ss'),
-          adminId: profile?.uid,
+          markedBy: profile?.uid,
+          method: 'qr',
           createdAt: Date.now()
         });
       } catch (err) {
@@ -263,13 +369,23 @@ export const Scanner: React.FC = () => {
         studentName: studentData.fullName
       });
 
-      // Stop scanner after successful scan
-      stopScanner();
+      // Clear success message after 3 seconds and continue scanning
+      setTimeout(() => {
+        setResult(null);
+      }, 3000);
+
+      // Keep scanner running for continuous scanning
 
     } catch (err) {
       console.error('Scan processing error:', err);
       setResult({ success: false, message: t.invalidQrCode });
-      stopScanner();
+
+      // Clear error message after 3 seconds and continue scanning
+      setTimeout(() => {
+        setResult(null);
+      }, 3000);
+
+      // Keep scanner running even on error for continuous scanning
     } finally {
       setLoading(false);
     }
@@ -282,14 +398,14 @@ export const Scanner: React.FC = () => {
     }
   };
 
-  // Auto-stop scanner after 5 minutes to prevent battery drain
+  // Auto-stop scanner after 30 minutes to prevent battery drain (continuous scanning mode)
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     if (scanning) {
       timeoutId = setTimeout(() => {
         stopScanner();
-        setResult({ success: false, message: 'Scanner timed out after 5 minutes. Please restart if needed.' });
-      }, 5 * 60 * 1000); // 5 minutes
+        setResult({ success: false, message: 'Scanner automatically stopped after 30 minutes of continuous scanning. Please restart if needed.' });
+      }, 30 * 60 * 1000); // 30 minutes
     }
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
@@ -320,7 +436,9 @@ export const Scanner: React.FC = () => {
                 className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {courses.map(course => (
-                  <option key={course.id} value={course.id}>{course.name} ({course.department})</option>
+                  <option key={course.id} value={course.id}>
+                    {course.name} ({(course.departments || [course.department]).join(', ')})
+                  </option>
                 ))}
               </select>
               <BookOpen className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -328,85 +446,123 @@ export const Scanner: React.FC = () => {
           )}
         </div>
 
-        <div className="relative aspect-square max-w-sm mx-auto bg-gray-900 rounded-[32px] overflow-hidden flex items-center justify-center border-8 border-white shadow-2xl">
-          <AnimatePresence mode="wait">
-            {courses.length === 0 ? (
-              <div className="text-center p-8 text-gray-500">
-                <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
-                <p>Waiting for courses...</p>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+            {t.selectDepartment || 'Select Department'}
+          </label>
+          <div className="relative">
+            <select
+              disabled={scanning || scannerInitializing}
+              value={selectedDepartment}
+              onChange={e => setSelectedDepartment(e.target.value)}
+              className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <option value="">
+                {t.allDepartments || 'All Departments'}
+              </option>
+              {DEPARTMENTS.map(department => (
+                <option key={department} value={department}>
+                  {department}
+                </option>
+              ))}
+            </select>
+            <Users className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          </div>
+        </div>
+        <AnimatePresence mode="wait">
+          {courses.length === 0 ? (
+            <div className="text-center p-8 text-gray-500">
+              <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
+              <p>Waiting for courses...</p>
+            </div>
+          ) : !scanning ? (
+            <motion.div
+              key="start"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center p-8"
+            >
+              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Camera className="text-white w-10 h-10" />
               </div>
-            ) : !scanning ? (
-              <motion.div
-                key="start"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-center p-8"
+              <button
+                onClick={startScanner}
+                disabled={scanning || scannerInitializing}
+                className="bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl"
               >
-                <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Camera className="text-white w-10 h-10" />
+                {scannerInitializing ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={16} />
+                    Initializing Camera...
+                  </div>
+                ) : scanning ? 'Starting Scanner...' : 'Start Scanner'}
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="reader"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="w-full h-full relative"
+            >
+              <div id="reader" className="w-full h-full" />
+              <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
+                <div className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-2">
+                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  Scanning...
                 </div>
                 <button
-                  onClick={startScanner}
-                  disabled={scanning || scannerInitializing}
-                  className="bg-[#5A5A40] text-white px-8 py-4 rounded-full font-bold hover:bg-[#4A4A30] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl"
-                >
-                  {scannerInitializing ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="animate-spin" size={16} />
-                      Initializing Camera...
-                    </div>
-                  ) : scanning ? 'Starting Scanner...' : 'Start Scanner'}
-                </button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="reader"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="w-full h-full"
-              >
-                <div id="reader" className="w-full h-full" />
-                <button
                   onClick={stopScanner}
-                  className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg"
+                  className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg hover:bg-red-600 transition-colors"
                 >
-                  Stop
+                  Stop Scanner
                 </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {loading && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-              <Loader2 className="text-white animate-spin" size={48} />
-            </div>
+              </div>
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
-        {result && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "p-6 rounded-2xl flex items-center gap-4 border",
-              result.success ? "bg-green-50 border-green-100 text-green-700" : "bg-red-50 border-red-100 text-red-700"
-            )}
-          >
-            {result.success ? <CheckCircle2 size={32} /> : <XCircle size={32} />}
-            <div>
-              <p className="font-bold">{result.message}</p>
-              {result.studentName && <p className="text-sm opacity-80">{result.studentName}</p>}
-            </div>
-            <button
-              onClick={() => { setResult(null); startScanner(); }}
-              className="ml-auto bg-white/50 px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/80 transition-colors"
-            >
-              Next Scan
-            </button>
-          </motion.div>
+        {loading && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+            <Loader2 className="text-white animate-spin" size={48} />
+          </div>
         )}
       </div>
+
+      {result && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className={cn(
+            "p-6 rounded-2xl flex items-center gap-4 border",
+            result.success ? "bg-green-50 border-green-100 text-green-700" : "bg-red-50 border-red-100 text-red-700"
+          )}
+        >
+          {result.success ? <CheckCircle2 size={32} /> : <XCircle size={32} />}
+          <div className="flex-1">
+            <p className="font-bold">{result.message}</p>
+            {result.studentName && <p className="text-sm opacity-80">{result.studentName}</p>}
+          </div>
+          <div className="flex gap-2">
+            {!result.success && (
+              <button
+                onClick={() => { setResult(null); }}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors"
+              >
+                Continue Scanning
+              </button>
+            )}
+            <button
+              onClick={() => { setResult(null); }}
+              className="bg-white/50 px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/80 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

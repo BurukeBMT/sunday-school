@@ -16,6 +16,7 @@ import { InstallPrompt } from './components/InstallPrompt';
 import { LoginPage } from './components/LoginPage';
 import { ResetPassword } from './components/ResetPassword';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ManualAttendance } from './components/ManualAttendance';
 import { Menu, X, Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -100,6 +101,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Scanner />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/manual-attendance"
+              element={
+                <ProtectedRoute>
+                  <ManualAttendance />
                 </ProtectedRoute>
               }
             />

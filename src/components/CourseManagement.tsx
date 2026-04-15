@@ -51,7 +51,9 @@ export const CourseManagement: React.FC = () => {
   const [customCourseName, setCustomCourseName] = useState('');
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('08:00');
-  const [form, setForm] = useState({ department: DEPARTMENTS[0], adminIds: [] as string[] });
+  const [attendanceStartTime, setAttendanceStartTime] = useState('08:00');
+  const [attendanceEndTime, setAttendanceEndTime] = useState('10:00');
+  const [form, setForm] = useState({ departments: [] as string[], adminIds: [] as string[] });
 
   const isGradeCourse = courseNameSelection === SPECIAL_GRADE_COURSE;
   const departmentOptions = isGradeCourse ? GRADE_DEPARTMENTS : DEPARTMENTS;
@@ -129,9 +131,11 @@ export const CourseManagement: React.FC = () => {
       const schedule = scheduleDate ? `${scheduleDate} ${scheduleTime}` : '';
       const courseData = {
         name: courseName,
-        department: form.department,
+        departments: form.departments,
         schedule,
         adminIds: form.adminIds,
+        attendanceStartTime,
+        attendanceEndTime,
       };
 
       if (editingCourse) {
@@ -146,7 +150,9 @@ export const CourseManagement: React.FC = () => {
       setCustomCourseName('');
       setScheduleDate('');
       setScheduleTime('08:00');
-      setForm({ department: DEPARTMENTS[0], adminIds: [] });
+      setAttendanceStartTime('08:00');
+      setAttendanceEndTime('10:00');
+      setForm({ departments: [], adminIds: [] });
     } catch (err) {
       console.error('Course save error:', err);
       alert('Failed to save course');
@@ -176,7 +182,9 @@ export const CourseManagement: React.FC = () => {
             setCustomCourseName('');
             setScheduleDate('');
             setScheduleTime('08:00');
-            setForm({ department: DEPARTMENTS[0], adminIds: [] });
+            setAttendanceStartTime('08:00');
+            setAttendanceEndTime('10:00');
+            setForm({ departments: [], adminIds: [] });
           }}
           className="flex items-center gap-2 bg-[#5A5A40] text-white px-6 py-3 rounded-full hover:bg-[#4A4A30] transition-colors shadow-lg shadow-olive-900/20"
         >
@@ -215,7 +223,9 @@ export const CourseManagement: React.FC = () => {
                     const parsed = parseSchedule(course.schedule);
                     setScheduleDate(parsed.date);
                     setScheduleTime(parsed.time);
-                    setForm({ department: course.department, adminIds: course.adminIds });
+                    setAttendanceStartTime(course.attendanceStartTime || '08:00');
+                    setAttendanceEndTime(course.attendanceEndTime || '10:00');
+                    setForm({ departments: course.departments || [course.department], adminIds: course.adminIds });
                     setIsModalOpen(true);
                   }}
                   className="p-3 text-gray-400 hover:text-olive-600 hover:bg-olive-50 rounded-2xl transition-all duration-200 shadow-sm"
@@ -231,7 +241,11 @@ export const CourseManagement: React.FC = () => {
               </div>
             </div>
             <h3 className="text-xl font-serif font-bold mb-2 text-[#1a1a1a] group-hover:scale-105 transition-transform duration-300">{course.name}</h3>
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 bg-gray-50 px-3 py-1 rounded-full inline-block">{course.department}</p>
+            <div className="space-y-2 mb-6">
+              {(course.departments || [course.department]).map((dept, index) => (
+                <p key={index} className="text-sm font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full inline-block mr-2 mb-2">{dept}</p>
+              ))}
+            </div>
 
             <div className="space-y-4 mt-auto">
               <div className="flex items-center gap-3 text-sm text-gray-500 bg-gray-50 p-3 rounded-2xl">
@@ -269,9 +283,10 @@ export const CourseManagement: React.FC = () => {
                     const selected = e.target.value;
                     setCourseNameSelection(selected);
                     setCustomCourseName('');
+                    // Reset departments when course type changes
                     setForm(prev => ({
                       ...prev,
-                      department: selected === SPECIAL_GRADE_COURSE ? GRADE_DEPARTMENTS[0] : DEPARTMENTS[0]
+                      departments: []
                     }));
                   }}
                   className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
@@ -298,14 +313,28 @@ export const CourseManagement: React.FC = () => {
               )}
 
               <div className="space-y-3">
-                <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Department</label>
-                <select
-                  value={form.department}
-                  onChange={e => setForm({ ...form, department: e.target.value })}
-                  className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
-                >
-                  {departmentOptions.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-                </select>
+                <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Departments</label>
+                <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto p-4 border border-gray-100 rounded-2xl bg-gray-50/50 shadow-inner">
+                  {departmentOptions.map(dept => (
+                    <label key={dept} className="flex items-center gap-3 p-3 hover:bg-white/50 rounded-2xl cursor-pointer transition-all duration-200">
+                      <input
+                        type="checkbox"
+                        checked={form.departments.includes(dept)}
+                        onChange={e => {
+                          const newDepartments = e.target.checked
+                            ? [...form.departments, dept]
+                            : form.departments.filter(d => d !== dept);
+                          setForm({ ...form, departments: newDepartments });
+                        }}
+                        className="w-5 h-5 text-olive-600 rounded-lg border-2 border-gray-300 focus:ring-olive-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{dept}</span>
+                    </label>
+                  ))}
+                </div>
+                {form.departments.length === 0 && (
+                  <p className="text-sm text-red-500 mt-1">Please select at least one department</p>
+                )}
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-3">
@@ -324,6 +353,26 @@ export const CourseManagement: React.FC = () => {
                     type="time"
                     value={scheduleTime}
                     onChange={e => setScheduleTime(e.target.value)}
+                    className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Attendance Start Time</label>
+                  <input
+                    type="time"
+                    value={attendanceStartTime}
+                    onChange={e => setAttendanceStartTime(e.target.value)}
+                    className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-sm font-bold uppercase tracking-widest text-gray-400">Attendance End Time</label>
+                  <input
+                    type="time"
+                    value={attendanceEndTime}
+                    onChange={e => setAttendanceEndTime(e.target.value)}
                     className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all duration-200 shadow-sm"
                   />
                 </div>
