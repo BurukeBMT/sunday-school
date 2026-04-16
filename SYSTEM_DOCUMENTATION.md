@@ -3,9 +3,9 @@
 
 ## 📖 Complete System Documentation
 
-**Version:** 2.0.0
+**Version:** 3.0.0
 **Last Updated:** April 16, 2026
-**Technology:** React 19, TypeScript, Firebase, Google Sheets, PWA
+**Technology:** React 19, TypeScript, Firebase, Google Sheets, PWA, ERP Dashboard
 
 ---
 
@@ -14,18 +14,20 @@
 1. [System Overview](#system-overview)
 2. [Architecture & Technology Stack](#architecture--technology-stack)
 3. [Core Features](#core-features)
-4. [User Roles & Permissions](#user-roles--permissions)
-5. [Database Schema](#database-schema)
-6. [Components Architecture](#components-architecture)
-7. [API & Services](#api--services)
-8. [Installation & Deployment](#installation--deployment)
-9. [Usage Guide](#usage-guide)
-10. [Advanced Features](#advanced-features)
-11. [Real-Time Analytics](#real-time-analytics)
-12. [Academic Assessment System](#academic-assessment-system)
-13. [Troubleshooting](#troubleshooting)
-14. [Development Guide](#development-guide)
-15. [Performance & Scalability](#performance--scalability)
+4. [ERP Dashboard System](#erp-dashboard-system)
+5. [User Roles & Permissions](#user-roles--permissions)
+6. [Database Schema](#database-schema)
+7. [Components Architecture](#components-architecture)
+8. [API & Services](#api--services)
+9. [Installation & Deployment](#installation--deployment)
+10. [Usage Guide](#usage-guide)
+11. [Advanced Features](#advanced-features)
+12. [Real-Time Analytics](#real-time-analytics)
+13. [Academic Assessment System](#academic-assessment-system)
+14. [ERP Analytics & Reporting](#erp-analytics--reporting)
+15. [Troubleshooting](#troubleshooting)
+16. [Development Guide](#development-guide)
+17. [Performance & Scalability](#performance--scalability)
 
 ---
 
@@ -40,7 +42,7 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - **📚 Academic Management**: Google Sheets integration for grading, results, and transcripts
 - **🌍 Ethiopian Integration**: Amharic language and calendar support
 - **📷 QR Code System**: Secure attendance marking with duplicate prevention
-- **📈 Advanced Analytics**: Performance insights and reporting
+- **🏢 Professional ERP Dashboard**: Complete admin interface with advanced analytics, modular components, and comprehensive reporting
 
 ---
 
@@ -130,6 +132,72 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 
 ---
 
+## 🏢 ERP Dashboard System
+
+### Professional Admin Interface
+The system now includes a comprehensive ERP-style dashboard accessible at `/erp` for Superadmin and Admin roles. This professional interface provides advanced school management capabilities with modular components and comprehensive analytics.
+
+### ERP Modules
+
+#### 1. 📊 Unified Dashboard
+- **Key Performance Indicators**: Real-time statistics with trend indicators
+- **Interactive Charts**: Multiple visualization types (Line, Bar, Pie, Area, Scatter)
+- **Quick Actions**: Fast access to administrative functions
+- **System Overview**: Complete school management at a glance
+
+#### 2. 👨‍🎓 Student Management Module
+- **Advanced Data Tables**: Search, filter, sort, and paginate student records
+- **Student Profiles**: Detailed drawer views with performance metrics
+- **Grade Distribution**: Visual breakdown of academic performance
+- **Enrollment Analytics**: Student growth and participation trends
+
+#### 3. 👨‍🏫 Teacher Management Module
+- **Assignment Overview**: Course and grade assignments tracking
+- **Performance Metrics**: Student performance by teacher
+- **Workload Analysis**: Course load distribution and balance
+- **Activity Monitoring**: Teaching engagement and activity tracking
+
+#### 4. 👨‍👩‍👧‍👦 Parent Management Module
+- **Family Accounts**: Parent profiles with linked children
+- **Engagement Tracking**: Parent interaction and involvement metrics
+- **Communication Tools**: Parent-teacher communication features
+- **Family Analytics**: Multi-child family performance insights
+
+#### 5. 📅 Attendance Analytics Module (Read-Only)
+- **Real-Time Monitoring**: Live attendance statistics and trends
+- **Grade-wise Analysis**: Attendance patterns by grade level
+- **Course Performance**: Attendance rates across different courses
+- **Historical Trends**: Long-term attendance pattern analysis
+
+#### 6. 📚 Grading Analytics Module (Read-Only)
+- **Grade Distribution**: Visual breakdown of academic performance
+- **Course Performance**: Subject-wise performance analysis
+- **Trend Analysis**: Academic progress over time
+- **Ranking Systems**: Performance rankings and comparisons
+
+#### 7. 📈 Advanced Analytics Module
+- **Correlation Analysis**: Attendance vs academic performance correlations
+- **Predictive Insights**: Performance trend predictions and recommendations
+- **Custom Reports**: Advanced filtering and reporting capabilities
+- **Data Export**: Comprehensive data export functionality
+
+#### 8. 📋 Activity Logs & Audit Trail
+- **Complete Audit System**: All user actions and system events logged
+- **Security Monitoring**: Login attempts, permission changes, data access tracking
+- **Compliance Tracking**: Regulatory compliance and data governance
+- **System Health**: Performance monitoring and error tracking
+
+### ERP Technical Features
+- **Modular Architecture**: Reusable components (StatCard, DataTable, ChartCard)
+- **Responsive Design**: Professional UI optimized for all screen sizes
+- **Role-Based Navigation**: Dynamic sidebar with permission-based menu items
+- **Advanced Filtering**: Multi-criteria search and filter capabilities
+- **Real-Time Updates**: Live data synchronization with Firebase
+- **Export Capabilities**: Data export in multiple formats
+- **Audit Trail**: Complete activity logging and monitoring
+
+---
+
 ## 👤 User Roles & Permissions
 
 ### 🔴 Superadmin (burukmaedot16@gmail.com)
@@ -144,6 +212,9 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - ✅ View all analytics and reports
 - ✅ Export/import data
 - ✅ System administration
+- ✅ **🏢 Full ERP Dashboard Access**: Complete professional admin interface
+- ✅ **📊 Advanced ERP Analytics**: Correlation analysis and predictive insights
+- ✅ **📋 ERP Activity Monitoring**: Complete audit trail and security monitoring
 
 #### Accessible Features:
 - Complete dashboard with all statistics
@@ -155,6 +226,9 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - Full attendance logs access
 - Academic results management
 - Analytics dashboard
+- **🏢 ERP Dashboard**: Professional admin interface with all modules
+- **📊 ERP Analytics**: Advanced correlation and predictive analytics
+- **📋 ERP Activity Logs**: Complete audit trail and system monitoring
 - System configuration
 
 ### 🟡 Admin/Teacher
@@ -167,6 +241,7 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - ✅ Enter academic marks and grades
 - ✅ View attendance logs for assigned courses
 - ✅ Access assigned course analytics
+- ✅ **🏢 Limited ERP Access**: Read-only access to relevant ERP modules
 - ❌ Cannot create/edit courses
 - ❌ Cannot manage other admins
 - ❌ Cannot access unassigned courses
@@ -179,6 +254,7 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - Academic marks entry
 - Grading rules configuration
 - Limited analytics access
+- **🏢 ERP Dashboard (Read-Only)**: Limited access to relevant ERP modules
 
 ### 🟢 Student
 **Personal academic and attendance access**
@@ -260,6 +336,22 @@ firebase-database/
 │       ├── method: "qr" | "manual"
 │       └── createdAt: number
 │
+├── activity_logs/
+│   └── {logId}/
+│       ├── id: string
+│       ├── timestamp: string (ISO 8601)
+│       ├── userId: string
+│       ├── userName: string
+│       ├── userRole: string
+│       ├── action: string
+│       ├── resource: string
+│       ├── resourceId?: string
+│       ├── details: string
+│       ├── ipAddress: string
+│       ├── userAgent: string
+│       ├── status: "success" | "warning" | "error"
+│       └── category: "authentication" | "data_modification" | "system" | "access" | "export"
+│
 └── results_control/
     └── {grade}/
         ├── isPublished: boolean
@@ -328,6 +420,25 @@ interface AttendanceLog {
   markedBy: string; // Admin UID
   method: 'qr' | 'manual';
   createdAt?: number;
+}
+```
+
+#### ActivityLog
+```typescript
+interface ActivityLog {
+  id: string;
+  timestamp: string; // ISO 8601 format
+  userId: string;
+  userName: string;
+  userRole: string;
+  action: string;
+  resource: string;
+  resourceId?: string;
+  details: string;
+  ipAddress: string;
+  userAgent: string;
+  status: 'success' | 'warning' | 'error';
+  category: 'authentication' | 'data_modification' | 'system' | 'access' | 'export';
 }
 ```
 

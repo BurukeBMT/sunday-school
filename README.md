@@ -1,6 +1,6 @@
 # ፍሬ ሃይማኖት ሰ/ት/ቤት አቴንዳንስ - Sunday School Attendance System
 
-A modern, mobile-first Progressive Web App (PWA) for managing Sunday School attendance with Ethiopian calendar integration, real-time analytics, and comprehensive academic assessment features.
+A modern, mobile-first Progressive Web App (PWA) for managing Sunday School attendance with Ethiopian calendar integration, real-time analytics, and comprehensive academic assessment features. Now includes a professional ERP-style admin dashboard for advanced school management.
 
 ## 🚀 Features
 
@@ -12,6 +12,7 @@ A modern, mobile-first Progressive Web App (PWA) for managing Sunday School atte
 - **Mobile-Optimized UI**: Beautiful responsive design for mobile devices
 - **QR Code Attendance System**: Secure attendance marking with duplicate prevention
 - **Academic Assessment System**: Google Sheets integration for grading, results, and transcripts
+- **🏢 Professional ERP Dashboard**: Complete admin interface with advanced analytics, student/teacher/parent management, and comprehensive reporting
 
 ### Advanced Features
 - **Multi-Role Access Control**: Granular permissions based on user roles
@@ -21,6 +22,7 @@ A modern, mobile-first Progressive Web App (PWA) for managing Sunday School atte
 - **Academic Results System**: Grading rules, results publishing, and PDF transcript generation
 - **Teacher Dashboard**: Marks entry, grading rules configuration, and course management
 - **Bulk Operations**: CSV import for student registration and data management
+- **ERP Admin Interface**: Professional dashboard with modular components, advanced filtering, and comprehensive data management
 
 ## 📱 Install as Mobile App
 
@@ -73,6 +75,9 @@ firebase deploy --only hosting
 - Access all attendance records and analytics
 - Publish academic results and manage grading rules
 - System administration and data export/import
+- **🏢 Complete ERP Dashboard Access**: Professional admin interface with all modules
+- **📊 Advanced Analytics**: Correlation analysis and predictive insights
+- **📋 Activity Monitoring**: Complete audit trail and security monitoring
 
 ### 🟡 Admin/Teacher
 - Access to assigned courses only
@@ -80,6 +85,7 @@ firebase deploy --only hosting
 - Enter academic marks and configure grading rules
 - View attendance logs for assigned courses
 - Limited analytics access
+- **🏢 Restricted ERP Access**: Read-only access to relevant modules
 
 ### 🟢 Student
 - View personal attendance records
@@ -110,6 +116,58 @@ Access live attendance insights at `/analytics` (Superadmin, Admin, Teacher role
 - Attendance records taken by each teacher
 - Most active teacher identification
 - Last activity timestamps
+
+## 🏢 ERP Admin Dashboard
+
+Access the professional ERP dashboard at `/erp` (Superadmin, Admin roles):
+
+### Unified Dashboard
+- **Key Performance Indicators**: Comprehensive stats cards with trend indicators
+- **Interactive Charts**: Real-time data visualization with multiple chart types
+- **Quick Actions**: Fast access to common administrative tasks
+- **System Overview**: Complete school management at a glance
+
+### Student Management Module
+- **Advanced Data Table**: Search, filter, sort, and paginate student records
+- **Student Profiles**: Detailed drawer views with performance metrics
+- **Grade Distribution**: Visual breakdown of student performance
+- **Enrollment Analytics**: Student growth and participation trends
+
+### Teacher Management Module
+- **Teacher Assignments**: Course and grade assignments overview
+- **Performance Metrics**: Student performance by teacher
+- **Workload Analysis**: Course load distribution and balance
+- **Activity Monitoring**: Teaching activity and engagement tracking
+
+### Parent Management Module
+- **Family Overview**: Parent accounts with linked children
+- **Engagement Tracking**: Parent interaction and involvement metrics
+- **Communication Tools**: Parent-teacher communication features
+- **Family Analytics**: Multi-child family performance insights
+
+### Attendance Analytics Module (Read-Only)
+- **Real-Time Monitoring**: Live attendance statistics and trends
+- **Grade-wise Analysis**: Attendance patterns by grade level
+- **Course Performance**: Attendance rates across different courses
+- **Historical Trends**: Long-term attendance pattern analysis
+
+### Grading Analytics Module (Read-Only)
+- **Grade Distribution**: Visual breakdown of academic performance
+- **Course Performance**: Subject-wise performance analysis
+- **Trend Analysis**: Academic progress over time
+- **Ranking Systems**: Performance rankings and comparisons
+
+### Advanced Analytics Module
+- **Correlation Analysis**: Attendance vs academic performance correlations
+- **Predictive Insights**: Performance trend predictions
+- **Custom Reports**: Advanced filtering and reporting capabilities
+- **Data Export**: Comprehensive data export functionality
+
+### Activity Logs & Audit Trail
+- **Complete Audit System**: All user actions and system events
+- **Security Monitoring**: Login attempts, permission changes, data access
+- **Compliance Tracking**: Regulatory compliance and data governance
+- **System Health**: Performance monitoring and error tracking
 
 ## 📚 Academic Assessment System
 
@@ -159,13 +217,15 @@ Firebase Realtime Database:
 ├── courses/         # Course configurations and assignments
 ├── teachers/        # Teacher profiles and assignments
 ├── attendance_logs/ # Real-time attendance records
-└── results_control/ # Academic results publishing controls
+├── results_control/ # Academic results publishing controls
+└── activity_logs/   # ERP audit trail and system events
 
-Google Sheets Integration:
-├── Grading Rules    # Assessment configurations
-├── Student Marks    # Individual assessment scores
-├── Results Data     # Calculated grades and rankings
-└── Transcript Data  # Complete academic records
+ERP Dashboard Structure:
+├── src/erp/
+│   ├── components/     # Reusable ERP components (StatCard, DataTable, ChartCard)
+│   ├── layout/         # ERP layout system (Sidebar, Topbar, ERPLayout)
+│   └── pages/          # ERP pages (Dashboard, Students, Teachers, etc.)
+└── routes/             # Updated routing with ERP nested routes
 ```
 
 ### Component Architecture
@@ -176,6 +236,24 @@ src/
 ├── lib/            # Utilities: analytics, sheetsApi, qrUtils, etc.
 ├── routes/         # AppRoutes, ProtectedRoute, RoleRoutes
 ├── pages/          # Page components
+├── erp/            # ERP Dashboard System
+│   ├── components/ # Reusable ERP components
+│   │   ├── StatCard.tsx     # Statistics display with trends
+│   │   ├── DataTable.tsx    # Advanced table with search/filter
+│   │   └── ChartCard.tsx    # Chart containers
+│   ├── layout/     # ERP layout system
+│   │   ├── Sidebar.tsx      # Role-based navigation
+│   │   ├── Topbar.tsx       # Header with search/notifications
+│   │   └── ERPLayout.tsx    # Main layout wrapper
+│   └── pages/      # ERP dashboard pages
+│       ├── UnifiedDashboard.tsx  # Main dashboard
+│       ├── Students.tsx          # Student management
+│       ├── Teachers.tsx          # Teacher management
+│       ├── Parents.tsx           # Parent management
+│       ├── Attendance.tsx        # Attendance analytics
+│       ├── Grading.tsx           # Grading analytics
+│       ├── Analytics.tsx         # Advanced analytics
+│       └── ActivityLogs.tsx      # Audit trail
 └── types.ts        # TypeScript definitions
 ```
 
@@ -187,6 +265,20 @@ src/
 - `TeacherDashboard.tsx` - Academic marks entry and grading
 - `StudentResults.tsx` - Academic results viewer with PDF download
 - `CourseManagement.tsx` - Course creation and department assignment
+
+### ERP Dashboard Components
+- `ERPLayout.tsx` - Main ERP layout with sidebar and topbar
+- `UnifiedDashboard.tsx` - Professional dashboard with KPIs and charts
+- `DataTable.tsx` - Advanced data table with search, filter, and pagination
+- `StatCard.tsx` - Statistics cards with trend indicators
+- `ChartCard.tsx` - Reusable chart containers
+- `Students.tsx` - Complete student management module
+- `Teachers.tsx` - Teacher performance and assignment management
+- `Parents.tsx` - Parent account and family management
+- `Attendance.tsx` - Read-only attendance analytics
+- `Grading.tsx` - Read-only grading analytics
+- `Analytics.tsx` - Advanced correlation analysis
+- `ActivityLogs.tsx` - Complete audit trail system
 
 ### Analytics Components
 - `GradeAttendanceChart.tsx` - Visual grade-wise attendance
