@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const profile = snapshot.val() as UserProfile;
           const normalizedRole = profile.role === 'super_admin' ? 'superadmin' : profile.role;
 
-          if (normalizedRole === 'admin' || normalizedRole === 'superadmin') {
+          if (normalizedRole === 'admin' || normalizedRole === 'superadmin' || normalizedRole === 'teacher') {
             setProfile({
               ...profile,
               role: normalizedRole as UserProfile['role'],
@@ -89,26 +89,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          // Check if there's an admin record with this email (created via AdminManagement)
+          // Check if there's an admin or teacher record with this email (created via AdminManagement or TeacherManagement)
           const usersRef = ref(database, 'users');
           const emailQuery = query(usersRef, orderByChild('email'), equalTo(userEmail));
           const querySnap = await get(emailQuery);
 
           if (querySnap.exists()) {
             const users = querySnap.val();
-            const adminKey = Object.keys(users).find(key => users[key].role === 'admin');
-            if (adminKey) {
-              const adminData = users[adminKey] as UserProfile;
+            const userKey = Object.keys(users).find(key => users[key].role === 'admin' || users[key].role === 'teacher');
+            if (userKey) {
+              const userData = users[userKey] as UserProfile;
 
-              // Update the admin record with the real Firebase Auth UID
+              // Update the user record with the real Firebase Auth UID
               const updatedProfile: UserProfile = {
-                ...adminData,
+                ...userData,
                 uid: user.uid,
-                name: user.displayName || adminData.name
+                name: user.displayName || userData.name
               };
 
               await set(userRef, updatedProfile);
-              await remove(ref(database, 'users/' + adminKey)); // Remove the old record
+              await remove(ref(database, 'users/' + userKey)); // Remove the old record
 
               setProfile(updatedProfile);
               setLoading(false);

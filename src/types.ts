@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'admin' | 'super_admin';
+export type UserRole = 'superadmin' | 'admin' | 'teacher';
 
 export interface UserProfile {
   uid: string;
@@ -6,6 +6,14 @@ export interface UserProfile {
   role: UserRole;
   name?: string;
   assignedCourses?: string[];
+  mustResetPassword?: boolean;
+}
+
+export interface TeacherProfile {
+  uid: string;
+  name: string;
+  assignedGrades: string[];
+  assignedCourses: string[];
   mustResetPassword?: boolean;
 }
 
@@ -17,6 +25,7 @@ export interface Student {
   phone: string;
   email?: string;
   department: string;
+  grade: string; // New: grade level (ክፍል 1 to ክፍል 12)
   qrToken: string;
   createdAt: string;
 }
@@ -25,6 +34,8 @@ export interface Course {
   id: string;
   name: string;
   departments: string[]; // Changed from single department to multiple departments
+  grade: string; // New: grade level this course belongs to
+  assignedTeacherId: string; // New: teacher assigned to this course
   schedule?: string;
   adminIds: string[];
   attendanceStartTime?: string; // New: when attendance can start (HH:mm format)
@@ -43,6 +54,76 @@ export interface AttendanceLog {
   method?: 'qr' | 'manual';
   createdAt?: number;
 }
+
+// Grading System Types (Google Sheets Integration)
+export interface GradingRule {
+  course: string;
+  type: string; // 'assignment', 'quiz', 'mid', 'final', etc.
+  weight: number; // percentage (0-100)
+}
+
+export interface MarkEntry {
+  studentId: string;
+  course: string;
+  type: string;
+  score: number;
+}
+
+export interface StudentResult {
+  studentId: string;
+  course: string;
+  total: number;
+  rank: number;
+}
+
+// New types for advanced academic features
+export interface GradeRanking {
+  studentId: string;
+  studentName: string;
+  grade: string;
+  totalScore: number;
+  rank: number;
+}
+
+export interface ResultsControl {
+  isPublished: boolean;
+  publishedAt?: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  studentId: string;
+  studentName: string;
+  grade: string;
+  totalScore: number;
+}
+
+export interface TranscriptData {
+  studentId: string;
+  studentName: string;
+  grade: string;
+  courses: Array<{
+    courseName: string;
+    score: number;
+    rank: number;
+  }>;
+  totalAverage: number;
+  overallRank: number;
+}
+
+export const GRADES = [
+  'ክፍል 1', 'ክፍል 2', 'ክፍል 3', 'ክፍል 4', 'ክፍል 5', 'ክፍል 6',
+  'ክፍል 7', 'ክፍል 8', 'ክፍል 9', 'ክፍል 10', 'ክፍል 11', 'ክፍል 12'
+];
+
+export const ASSESSMENT_TYPES = [
+  'assignment',
+  'quiz',
+  'mid',
+  'final',
+  'project',
+  'participation'
+];
 
 export const DEPARTMENTS = [
   'ደቂቀ ሕጻናት',

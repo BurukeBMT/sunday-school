@@ -21,7 +21,7 @@ import {
 import { database, handleDatabaseError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { DEPARTMENTS } from '../types';
+import { Course, DEPARTMENTS, Student } from '../types';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
@@ -109,8 +109,14 @@ export const ManualAttendance: React.FC = () => {
         // Filter by course departments
         if (selectedCourse) {
             const course = courses.find(c => c.id === selectedCourse);
-            if (course && (course.departments || course.department)) {
-                const courseDepartments = course.departments || [course.department];
+            if (course) {
+                const courseDepartments = Array.isArray(course.departments)
+                    ? course.departments
+                    : course.departments
+                        ? [course.departments]
+                        : course.department
+                            ? [course.department]
+                            : [];
                 filtered = filtered.filter(student => courseDepartments.includes(student.department));
             }
         }
@@ -127,13 +133,31 @@ export const ManualAttendance: React.FC = () => {
     }, [searchQuery, students, selectedCourse, courses]);
 
     const markAttendance = async (student: Student) => {
-        if (!selectedCourse || markingAttendance) return;
+        if (!selectedCourse || markingAttendance) {
+            if (!selectedCourse) {
+                setResult({
+                    success: false,
+                    message: 'Please select a valid course before marking attendance.'
+                });
+                setTimeout(() => setResult(null), 3000);
+            }
+            return;
+        }
 
         setMarkingAttendance(student.id);
 
         try {
             const today = format(new Date(), 'yyyy-MM-dd');
             const course = courses.find(c => c.id === selectedCourse);
+
+            if (!course) {
+                setResult({
+                    success: false,
+                    message: 'Selected course not found. Please reload and try again.'
+                });
+                setTimeout(() => setResult(null), 3000);
+                return;
+            }
 
             // Check for duplicate attendance
             const logsRef = ref(database, 'attendance_logs');

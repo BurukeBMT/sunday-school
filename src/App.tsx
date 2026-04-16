@@ -1,23 +1,11 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
-import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
-import { Dashboard } from './components/Dashboard';
-import { Registration } from './components/Registration';
-import { StudentList } from './components/StudentList';
-import { CourseManagement } from './components/CourseManagement';
-import { Scanner } from './components/Scanner';
-import { AttendanceLogs } from './components/AttendanceLogs';
-import { AdminManagement } from './components/AdminManagement';
-import { Unauthorized } from './components/Unauthorized';
 import { InstallPrompt } from './components/InstallPrompt';
-import { LoginPage } from './components/LoginPage';
-import { ResetPassword } from './components/ResetPassword';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { ManualAttendance } from './components/ManualAttendance';
-import { Menu, X, Loader2 } from 'lucide-react';
+import { AppRoutes } from './routes/AppRoutes';
+import { Menu, Loader2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
@@ -32,13 +20,7 @@ const AppContent: React.FC = () => {
   }
 
   if (!user) {
-    return (
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    );
+    return <AppRoutes />;
   }
 
   return (
@@ -86,83 +68,7 @@ const AppContent: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/scanner"
-              element={
-                <ProtectedRoute>
-                  <Scanner />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/manual-attendance"
-              element={
-                <ProtectedRoute>
-                  <ManualAttendance />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/attendance"
-              element={
-                <ProtectedRoute>
-                  <AttendanceLogs />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/registration"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin']}>
-                  <Registration />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/students"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin']}>
-                  <StudentList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/courses"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin']}>
-                  <CourseManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admins"
-              element={
-                <ProtectedRoute allowedRoles={['superadmin']}>
-                  <AdminManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reset-password"
-              element={
-                <ProtectedRoute>
-                  <ResetPassword />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+          <AppRoutes />
         </div>
       </main>
 

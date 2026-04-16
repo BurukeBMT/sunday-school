@@ -11,7 +11,12 @@ import {
   Menu,
   X,
   ShieldCheck,
-  UserCheck
+  UserCheck,
+  GraduationCap,
+  BarChart3,
+  Trophy,
+  Lock,
+  User
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -31,13 +36,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   const menuItems = [
     { path: '/dashboard', label: t.dashboard, icon: LayoutDashboard },
-    { path: '/registration', label: t.registration, icon: UserPlus, hidden: !isSuperAdmin },
-    { path: '/students', label: t.students, icon: Users, hidden: !isSuperAdmin },
-    { path: '/courses', label: t.courses, icon: BookOpen, hidden: !isSuperAdmin },
-    { path: '/admins', label: t.admins, icon: ShieldCheck, hidden: !isSuperAdmin },
+    // Student routes
+    { path: '/student/profile', label: 'My Profile', icon: User, hidden: profile?.role !== 'student' },
+    { path: '/student/results', label: 'My Results', icon: BarChart3, hidden: profile?.role !== 'student' },
+    // Teacher routes
+    { path: '/teacher/dashboard', label: 'Grade Management', icon: GraduationCap, hidden: profile?.role !== 'teacher' },
+    { path: '/teacher/attendance', label: 'Attendance', icon: ClipboardList, hidden: profile?.role !== 'teacher' },
+    { path: '/teacher/marks', label: 'Enter Marks', icon: BookOpen, hidden: profile?.role !== 'teacher' },
+    // Admin/SuperAdmin routes
+    { path: '/admin/users', label: t.registration, icon: UserPlus, hidden: !isSuperAdmin },
+    { path: '/admin/students', label: t.students, icon: Users, hidden: !isSuperAdmin },
+    { path: '/admin/courses', label: t.courses, icon: BookOpen, hidden: !isSuperAdmin },
+    { path: '/admin/admins', label: t.admins, icon: ShieldCheck, hidden: !isSuperAdmin },
+    { path: '/admin/results', label: 'Results Overview', icon: BarChart3, hidden: !isSuperAdmin },
+    { path: '/admin/publish', label: 'Publish Results', icon: Lock, hidden: !isSuperAdmin },
+    { path: '/admin/ranking', label: 'Grade Rankings', icon: Trophy, hidden: !['superadmin', 'admin', 'teacher'].includes(profile?.role || '') },
+    // Common routes (attendance system)
     { path: '/scanner', label: t.scanner, icon: QrCode },
     { path: '/manual-attendance', label: t.manualAttendance || 'Manual Attendance', icon: UserCheck },
     { path: '/attendance', label: t.logs, icon: ClipboardList },
+    { path: '/analytics', label: 'Analytics', icon: BarChart3, hidden: !['superadmin', 'admin', 'teacher'].includes(profile?.role || '') },
   ];
 
   return (
