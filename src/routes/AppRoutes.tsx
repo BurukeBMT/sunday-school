@@ -23,6 +23,17 @@ const AttendanceAnalyticsDashboard = lazy(() => import('../components/Attendance
 const StudentRegistration = lazy(() => import('../components/StudentRegistration'));
 const ParentDashboard = lazy(() => import('../components/ParentDashboard'));
 
+// ERP Components
+const ERPLayout = lazy(() => import('../erp/layout/ERPLayout'));
+const UnifiedDashboard = lazy(() => import('../erp/pages/UnifiedDashboard'));
+const Students = lazy(() => import('../erp/pages/Students'));
+const Teachers = lazy(() => import('../erp/pages/Teachers'));
+const Parents = lazy(() => import('../erp/pages/Parents'));
+const Attendance = lazy(() => import('../erp/pages/Attendance'));
+const Grading = lazy(() => import('../erp/pages/Grading'));
+const Analytics = lazy(() => import('../erp/pages/Analytics'));
+const ActivityLogs = lazy(() => import('../erp/pages/ActivityLogs'));
+
 // Import routing components
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleRoutes } from './RoleRoutes';
@@ -144,6 +155,22 @@ export const AppRoutes: React.FC = () => {
                     <ParentDashboard />
                 </ProtectedRoute>
             } />
+
+            {/* ERP Dashboard Routes - New Professional Admin Interface */}
+            <Route path="/erp" element={
+                <ProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <ERPLayout />
+                </ProtectedRoute>
+            }>
+                <Route index element={<UnifiedDashboard />} />
+                <Route path="students" element={<Students />} />
+                <Route path="teachers" element={<Teachers />} />
+                <Route path="parents" element={<Parents />} />
+                <Route path="attendance" element={<Attendance />} />
+                <Route path="grading" element={<Grading />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="activity-logs" element={<ActivityLogs />} />
+            </Route>
 
             {/* Unauthorized access page */}
             <Route path="/unauthorized" element={<Unauthorized />} />
