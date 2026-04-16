@@ -30,6 +30,7 @@ import {
 } from 'firebase/auth';
 import { UserProfile } from '../types';
 import { cn } from '../lib/utils';
+import { useActivityLogger } from '../lib/activityLogger';
 
 const SUPER_ADMIN_EMAIL = 'burukmaedot16@gmail.com';
 
@@ -52,6 +53,7 @@ export const AdminManagement: React.FC = () => {
   const [derivedName, setDerivedName] = useState('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
+  const { logActivity } = useActivityLogger();
 
   useEffect(() => {
     const adminsRef = ref(database, 'users');
@@ -129,6 +131,12 @@ export const AdminManagement: React.FC = () => {
       await set(ref(database, 'users/' + credential.user.uid), userProfile);
       await restoreSuperAdmin();
 
+      // Log activity
+      await logActivity('Created new admin account', 'users', credential.user.uid, {
+        email: emailValue,
+        name: finalName
+      });
+
       setInfo('Admin created successfully. The admin must sign in and reset their password.');
       setIsModalOpen(false);
       setNewAdminEmail('');
@@ -152,6 +160,13 @@ export const AdminManagement: React.FC = () => {
     if (!window.confirm(`Remove ${admin.email} from admin access?`)) return;
     try {
       await remove(ref(database, 'users/' + admin.uid));
+
+      // Log activity
+      await logActivity('Removed admin access', 'users', admin.uid, {
+        email: admin.email,
+        name: admin.name
+      });
+
       setInfo('Admin access removed.');
     } catch (err: any) {
       setError(err.message || 'Failed to remove admin access.');

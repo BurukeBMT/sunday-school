@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { PermissionsProvider } from './lib/usePermissions';
 import { Sidebar } from './components/Sidebar';
 import { InstallPrompt } from './components/InstallPrompt';
 import { AppRoutes } from './routes/AppRoutes';
@@ -82,9 +83,11 @@ export default function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
+        <PermissionsProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </PermissionsProvider>
       </LanguageProvider>
     </AuthProvider>
   );

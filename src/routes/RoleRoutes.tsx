@@ -16,6 +16,8 @@ const AdminManagement = lazy(() => import('../components/AdminManagement'));
 const SuperAdminResults = lazy(() => import('../components/SuperAdminResults'));
 const GradeRanking = lazy(() => import('../components/GradeRanking'));
 const ResultsPublishPanel = lazy(() => import('../components/ResultsPublishPanel'));
+const SuperAdminDashboard = lazy(() => import('../components/SuperAdminDashboard'));
+const ActivityLogPanel = lazy(() => import('../components/ActivityLogPanel'));
 
 interface RoleRoutesProps {
     role: 'student' | 'teacher' | 'superadmin' | 'attendance';
@@ -49,7 +51,8 @@ export const RoleRoutes: React.FC<RoleRoutesProps> = ({ role }) => {
         case 'superadmin':
             return (
                 <Routes>
-                    <Route index element={<Dashboard />} />
+                    <Route index element={<SuperAdminDashboard />} />
+                    <Route path="dashboard" element={<SuperAdminDashboard />} />
                     <Route path="users" element={<Registration />} />
                     <Route path="students" element={<StudentList />} />
                     <Route path="courses" element={<CourseManagement />} />
@@ -57,6 +60,7 @@ export const RoleRoutes: React.FC<RoleRoutesProps> = ({ role }) => {
                     <Route path="results" element={<SuperAdminResults />} />
                     <Route path="ranking" element={<GradeRanking />} />
                     <Route path="publish" element={<ResultsPublishPanel />} />
+                    <Route path="activity" element={<ActivityLogPanel />} />
                     {/* Redirect unknown admin routes to admin dashboard */}
                     <Route path="*" element={<Navigate to="/admin" replace />} />
                 </Routes>

@@ -16,7 +16,9 @@ import {
   BarChart3,
   Trophy,
   Lock,
-  User
+  User,
+  Activity,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -43,6 +45,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { path: '/teacher/dashboard', label: 'Grade Management', icon: GraduationCap, hidden: profile?.role !== 'teacher' },
     { path: '/teacher/attendance', label: 'Attendance', icon: ClipboardList, hidden: profile?.role !== 'teacher' },
     { path: '/teacher/marks', label: 'Enter Marks', icon: BookOpen, hidden: profile?.role !== 'teacher' },
+    // Super Admin routes
+    { path: '/admin/dashboard', label: 'Super Admin Dashboard', icon: Settings, hidden: !isSuperAdmin },
+    { path: '/admin/activity', label: 'Activity Logs', icon: Activity, hidden: !isSuperAdmin },
     // Admin/SuperAdmin routes
     { path: '/admin/users', label: t.registration, icon: UserPlus, hidden: !isSuperAdmin },
     { path: '/admin/students', label: t.students, icon: Users, hidden: !isSuperAdmin },
@@ -51,6 +56,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { path: '/admin/results', label: 'Results Overview', icon: BarChart3, hidden: !isSuperAdmin },
     { path: '/admin/publish', label: 'Publish Results', icon: Lock, hidden: !isSuperAdmin },
     { path: '/admin/ranking', label: 'Grade Rankings', icon: Trophy, hidden: !['superadmin', 'admin', 'teacher'].includes(profile?.role || '') },
+    { path: '/student-registration', label: 'Student Registration', icon: UserPlus, hidden: !['superadmin', 'admin'].includes(profile?.role || '') },
+    // Parent routes
+    { path: '/parent-dashboard', label: 'Parent Dashboard', icon: Users, hidden: profile?.role !== 'parent' },
     // Common routes (attendance system)
     { path: '/scanner', label: t.scanner, icon: QrCode },
     { path: '/manual-attendance', label: t.manualAttendance || 'Manual Attendance', icon: UserCheck },

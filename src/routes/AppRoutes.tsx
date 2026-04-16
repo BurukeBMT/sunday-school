@@ -20,6 +20,8 @@ const ResultsPublishPanel = lazy(() => import('../components/ResultsPublishPanel
 const StudentProfile = lazy(() => import('../components/StudentProfile'));
 const ResetPassword = lazy(() => import('../components/ResetPassword'));
 const AttendanceAnalyticsDashboard = lazy(() => import('../components/AttendanceAnalyticsDashboard'));
+const StudentRegistration = lazy(() => import('../components/StudentRegistration'));
+const ParentDashboard = lazy(() => import('../components/ParentDashboard'));
 
 // Import routing components
 import { ProtectedRoute } from './ProtectedRoute';
@@ -126,6 +128,20 @@ export const AppRoutes: React.FC = () => {
             <Route path="/results-publish" element={
                 <ProtectedRoute allowedRoles={['superadmin']}>
                     <ResultsPublishPanel />
+                </ProtectedRoute>
+            } />
+
+            {/* Student Registration Route */}
+            <Route path="/student-registration" element={
+                <ProtectedRoute allowedRoles={['superadmin', 'admin']}>
+                    <StudentRegistration />
+                </ProtectedRoute>
+            } />
+
+            {/* Parent Dashboard Route */}
+            <Route path="/parent-dashboard" element={
+                <ProtectedRoute allowedRoles={['parent']}>
+                    <ParentDashboard />
                 </ProtectedRoute>
             } />
 

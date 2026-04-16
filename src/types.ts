@@ -21,6 +21,7 @@ export const STUDENT_ID_REGEX = /^FHST\d{5}$/;
 
 export interface Student {
   id: string; // FHST00001
+  uid?: string; // Firebase Auth UID (new)
   fullName: string;
   phone: string;
   email?: string;
@@ -28,6 +29,20 @@ export interface Student {
   grade: string; // New: grade level (ክፍል 1 to ክፍል 12)
   qrToken: string;
   createdAt: string;
+  parentId?: string; // New: link to parent
+  username?: string; // New: auto-generated username
+  passwordTemp?: string; // New: temporary password for first login
+}
+
+export interface Parent {
+  parentId: string; // PAR-000001
+  uid?: string; // Firebase Auth UID
+  username: string; // phone number or email
+  passwordTemp?: string; // temporary password
+  linkedStudents: string[]; // array of student IDs
+  createdAt: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface Course {
