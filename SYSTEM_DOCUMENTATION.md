@@ -3,9 +3,9 @@
 
 ## 📖 Complete System Documentation
 
-**Version:** 3.0.0
-**Last Updated:** April 16, 2026
-**Technology:** React 19, TypeScript, Firebase, Google Sheets, PWA, ERP Dashboard
+**Version:** 4.0.0
+**Last Updated:** December 2024
+**Technology:** React 19, TypeScript, Firebase, Google Sheets, PWA, ERP Dashboard, Production Features
 
 ---
 
@@ -37,12 +37,19 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 
 ### Key Characteristics
 - **📱 Mobile-First PWA**: Installable on smartphones and tablets with offline support
-- **🔐 Multi-Role Authentication**: Superadmin, Admin, Teacher, Student roles with granular permissions
+- **🔐 Multi-Role Authentication**: Superadmin, Admin, Teacher, Student, Parent roles with granular permissions
 - **📊 Real-Time Analytics**: Live attendance monitoring with comprehensive dashboards
 - **📚 Academic Management**: Google Sheets integration for grading, results, and transcripts
 - **🌍 Ethiopian Integration**: Amharic language and calendar support
 - **📷 QR Code System**: Secure attendance marking with duplicate prevention
 - **🏢 Professional ERP Dashboard**: Complete admin interface with advanced analytics, modular components, and comprehensive reporting
+- **👨‍👩‍👧 Parent Portal**: Dedicated parent access for child monitoring
+- **🔐 Login History & Security**: Complete audit trail and device tracking
+- **📋 Attendance Corrections**: Workflow-based attendance modifications
+- **📊 Auto Reports**: Automated weekly and monthly report generation
+- **🚨 Absence Alerts**: Automated absence monitoring and notifications
+- **📅 Academic Calendar**: Comprehensive scheduling and event management
+- **💾 Backup & Restore**: Complete data backup and recovery system
 
 ---
 
@@ -123,12 +130,48 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - **Ethiopian Calendar**: Native date display and conversion
 - **Cultural Formatting**: Localized date and number formatting
 
-### 8. 📊 Advanced Analytics Dashboard
-- **Real-Time Attendance Stats**: Live monitoring of attendance
-- **Course Performance**: Attendance rates by course
-- **Grade Analytics**: Performance by grade level (ክፍል 1-12)
-- **Teacher Activity**: Attendance marking statistics
-- **Historical Data**: Date-specific analytics
+### 9. 👨‍👩‍👧 Parent Portal System
+- **Auto-Generated Accounts**: Parents automatically created during student registration
+- **Secure Credentials**: Unique usernames and temporary passwords
+- **Child Monitoring**: View attendance and academic results for linked children
+- **Real-Time Updates**: Live notifications for attendance and grades
+- **PDF Credentials**: Downloadable login information
+
+### 10. 🔐 Security & Audit System
+- **Login History**: Complete authentication tracking with IP and device info
+- **Activity Logging**: All user actions logged with timestamps
+- **Device Tracking**: Mobile/desktop detection and session monitoring
+- **Security Monitoring**: Failed login attempts and suspicious activity
+
+### 11. 📋 Attendance Correction Workflow
+- **Request System**: Teachers/admins can request attendance corrections
+- **Approval Process**: Superadmin review and approval workflow
+- **Audit Trail**: Complete history of all attendance modifications
+- **Reason Tracking**: Mandatory justification for all changes
+
+### 12. 📊 Automated Reporting System
+- **Weekly Reports**: Auto-generated attendance summaries with PDF export
+- **Monthly Reports**: Comprehensive performance analytics
+- **Email Distribution**: Automated report delivery
+- **Custom Dashboards**: Performance metrics and trend analysis
+
+### 13. 🚨 Absence Alert Management
+- **Rule-Based Alerts**: Configurable absence thresholds (2 absences = warning, 3+ = critical)
+- **Automated Monitoring**: Daily alert generation and tracking
+- **Parent Notifications**: Real-time alerts for parent accounts
+- **Resolution Tracking**: Alert acknowledgment and follow-up
+
+### 14. 📅 Academic Calendar System
+- **Event Management**: Classes, holidays, exams, and special events
+- **Recurring Events**: Automated scheduling for regular activities
+- **Attendance Locks**: Date-based attendance modification restrictions
+- **Course Scheduling**: Class timetables and room assignments
+
+### 15. 💾 Backup & Recovery System
+- **Automated Backups**: Daily/weekly scheduled data backups
+- **Manual Exports**: On-demand data export in JSON/CSV formats
+- **Restore Functionality**: Complete data recovery from backup snapshots
+- **Integrity Verification**: Checksum validation for backup integrity
 
 ---
 
@@ -186,6 +229,24 @@ The system now includes a comprehensive ERP-style dashboard accessible at `/erp`
 - **Security Monitoring**: Login attempts, permission changes, data access tracking
 - **Compliance Tracking**: Regulatory compliance and data governance
 - **System Health**: Performance monitoring and error tracking
+
+#### 9. ✅ Attendance Corrections Module
+- **Correction Workflow**: Request and approval system for attendance modifications
+- **Audit Trail**: Complete history of all attendance changes with justification
+- **Role-Based Approvals**: Multi-level approval process for attendance corrections
+- **Bulk Corrections**: Efficient handling of multiple attendance adjustments
+
+#### 10. 💾 Backup & Recovery Management Module
+- **Automated Backups**: Scheduled system-wide data backups
+- **Manual Backups**: On-demand backup creation with progress tracking
+- **Data Integrity**: Backup verification and corruption detection
+- **Restore Operations**: Point-in-time data recovery with rollback capabilities
+
+#### 11. 📅 Academic Calendar Management Module
+- **Event Scheduling**: Create and manage academic events and holidays
+- **Recurring Events**: Automated recurring event creation and management
+- **Attendance Locks**: Automatic attendance restrictions during holidays/events
+- **Calendar Integration**: Visual calendar interface with event categorization
 
 ### ERP Technical Features
 - **Modular Architecture**: Reusable components (StatCard, DataTable, ChartCard)
@@ -287,7 +348,7 @@ firebase-database/
 │   └── {uid}/
 │       ├── uid: string
 │       ├── email: string
-│       ├── role: "superadmin" | "admin" | "teacher" | "student"
+│       ├── role: "superadmin" | "admin" | "teacher" | "student" | "parent"
 │       ├── name?: string
 │       ├── mustResetPassword?: boolean
 │       └── assignedCourses?: string[]
@@ -301,7 +362,19 @@ firebase-database/
 │       ├── department: string
 │       ├── grade: string (ክፍል 1-12)
 │       ├── qrToken: string
+│       ├── parentId?: string
 │       └── createdAt: string
+│
+├── parents/
+│   └── {parentId}/
+│       ├── id: string
+│       ├── fullName: string
+│       ├── email: string
+│       ├── username: string
+│       ├── tempPassword: string
+│       ├── linkedStudents: string[]
+│       ├── createdAt: string
+│       └── lastLogin?: string
 │
 ├── courses/
 │   └── {courseId}/
@@ -336,6 +409,128 @@ firebase-database/
 │       ├── method: "qr" | "manual"
 │       └── createdAt: number
 │
+├── login_logs/
+│   └── {logId}/
+│       ├── id: string
+│       ├── userId: string
+│       ├── email: string
+│       ├── timestamp: string (ISO 8601)
+│       ├── ipAddress: string
+│       ├── userAgent: string
+│       ├── deviceType: string
+│       ├── success: boolean
+│       └── location?: string
+│
+├── attendance_corrections/
+│   └── {correctionId}/
+│       ├── id: string
+│       ├── studentId: string
+│       ├── courseId: string
+│       ├── originalDate: string (YYYY-MM-DD)
+│       ├── correctedDate: string (YYYY-MM-DD)
+│       ├── reason: string
+│       ├── requestedBy: string
+│       ├── approvedBy?: string
+│       ├── status: "pending" | "approved" | "rejected"
+│       ├── createdAt: string
+│       └── approvedAt?: string
+│
+├── absence_alerts/
+│   └── {alertId}/
+│       ├── id: string
+│       ├── studentId: string
+│       ├── studentName: string
+│       ├── department: string
+│       ├── absenceCount: number
+│       ├── threshold: number
+│       ├── severity: "warning" | "critical"
+│       ├── status: "active" | "resolved"
+│       ├── createdAt: string
+│       ├── resolvedAt?: string
+│       └── resolvedBy?: string
+│
+├── weekly_reports/
+│   └── {reportId}/
+│       ├── id: string
+│       ├── weekStart: string (YYYY-MM-DD)
+│       ├── weekEnd: string (YYYY-MM-DD)
+│       ├── department: string
+│       ├── totalStudents: number
+│       ├── totalAttendance: number
+│       ├── attendanceRate: number
+│       ├── generatedAt: string
+│       └── generatedBy: string
+│
+├── monthly_reports/
+│   └── {reportId}/
+│       ├── id: string
+│       ├── month: string (YYYY-MM)
+│       ├── department: string
+│       ├── totalStudents: number
+│       ├── totalAttendance: number
+│       ├── attendanceRate: number
+│       ├── topPerformers: string[]
+│       ├── generatedAt: string
+│       └── generatedBy: string
+│
+├── timeline/
+│   └── {entryId}/
+│       ├── id: string
+│       ├── studentId: string
+│       ├── type: "attendance" | "grade" | "enrollment" | "correction"
+│       ├── title: string
+│       ├── description: string
+│       ├── date: string (YYYY-MM-DD)
+│       ├── metadata?: object
+│       └── createdAt: string
+│
+├── backups/
+│   └── {backupId}/
+│       ├── id: string
+│       ├── type: "auto" | "manual"
+│       ├── timestamp: string (ISO 8601)
+│       ├── size: number
+│       ├── checksum: string
+│       ├── status: "completed" | "failed"
+│       ├── createdBy: string
+│       └── downloadUrl?: string
+│
+├── teacher_metrics/
+│   └── {metricId}/
+│       ├── id: string
+│       ├── teacherId: string
+│       ├── teacherName: string
+│       ├── period: string (YYYY-MM)
+│       ├── attendanceMarked: number
+│       ├── studentsTaught: number
+│       ├── avgClassSize: number
+│       ├── efficiency: number
+│       └── lastUpdated: string
+│
+├── calendar_events/
+│   └── {eventId}/
+│       ├── id: string
+│       ├── title: string
+│       ├── description: string
+│       ├── type: "class" | "holiday" | "exam" | "event"
+│       ├── startDate: string (YYYY-MM-DD)
+│       ├── endDate: string (YYYY-MM-DD)
+│       ├── isRecurring: boolean
+│       ├── recurrencePattern?: string
+│       ├── attendanceLocked: boolean
+│       ├── createdBy: string
+│       └── createdAt: string
+│
+├── academic_calendars/
+│   └── {calendarId}/
+│       ├── id: string
+│       ├── year: number
+│       ├── term: string
+│       ├── events: string[]
+│       ├── holidays: string[]
+│       ├── createdAt: string
+│       └── updatedAt: string
+│
 ├── activity_logs/
 │   └── {logId}/
 │       ├── id: string
@@ -351,6 +546,14 @@ firebase-database/
 │       ├── userAgent: string
 │       ├── status: "success" | "warning" | "error"
 │       └── category: "authentication" | "data_modification" | "system" | "access" | "export"
+│
+├── system_config/
+│   └── settings/
+│       ├── absenceAlertThresholds: {warning: number, critical: number}
+│       ├── backupSchedule: string
+│       ├── reportAutoGeneration: boolean
+│       ├── calendarLockDates: string[]
+│       └── lastUpdated: string
 │
 └── results_control/
     └── {grade}/
@@ -442,6 +645,183 @@ interface ActivityLog {
 }
 ```
 
+#### Parent
+```typescript
+interface Parent {
+  id: string;
+  fullName: string;
+  email: string;
+  username: string;
+  tempPassword: string;
+  linkedStudents: string[];
+  createdAt: string;
+  lastLogin?: string;
+}
+```
+
+#### LoginLog
+```typescript
+interface LoginLog {
+  id: string;
+  userId: string;
+  email: string;
+  timestamp: string; // ISO 8601
+  ipAddress: string;
+  userAgent: string;
+  deviceType: string;
+  success: boolean;
+  location?: string;
+}
+```
+
+#### AttendanceCorrection
+```typescript
+interface AttendanceCorrection {
+  id: string;
+  studentId: string;
+  courseId: string;
+  originalDate: string; // YYYY-MM-DD
+  correctedDate: string; // YYYY-MM-DD
+  reason: string;
+  requestedBy: string;
+  approvedBy?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  approvedAt?: string;
+}
+```
+
+#### AbsenceAlert
+```typescript
+interface AbsenceAlert {
+  id: string;
+  studentId: string;
+  studentName: string;
+  department: string;
+  absenceCount: number;
+  threshold: number;
+  severity: 'warning' | 'critical';
+  status: 'active' | 'resolved';
+  createdAt: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+}
+```
+
+#### WeeklyReport
+```typescript
+interface WeeklyReport {
+  id: string;
+  weekStart: string; // YYYY-MM-DD
+  weekEnd: string; // YYYY-MM-DD
+  department: string;
+  totalStudents: number;
+  totalAttendance: number;
+  attendanceRate: number;
+  generatedAt: string;
+  generatedBy: string;
+}
+```
+
+#### MonthlyReport
+```typescript
+interface MonthlyReport {
+  id: string;
+  month: string; // YYYY-MM
+  department: string;
+  totalStudents: number;
+  totalAttendance: number;
+  attendanceRate: number;
+  topPerformers: string[];
+  generatedAt: string;
+  generatedBy: string;
+}
+```
+
+#### TimelineEntry
+```typescript
+interface TimelineEntry {
+  id: string;
+  studentId: string;
+  type: 'attendance' | 'grade' | 'enrollment' | 'correction';
+  title: string;
+  description: string;
+  date: string; // YYYY-MM-DD
+  metadata?: object;
+  createdAt: string;
+}
+```
+
+#### BackupMetadata
+```typescript
+interface BackupMetadata {
+  id: string;
+  type: 'auto' | 'manual';
+  timestamp: string; // ISO 8601
+  size: number;
+  checksum: string;
+  status: 'completed' | 'failed';
+  createdBy: string;
+  downloadUrl?: string;
+}
+```
+
+#### TeacherMetrics
+```typescript
+interface TeacherMetrics {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  period: string; // YYYY-MM
+  attendanceMarked: number;
+  studentsTaught: number;
+  avgClassSize: number;
+  efficiency: number;
+  lastUpdated: string;
+}
+```
+
+#### CalendarEvent
+```typescript
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  type: 'class' | 'holiday' | 'exam' | 'event';
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  isRecurring: boolean;
+  recurrencePattern?: string;
+  attendanceLocked: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+```
+
+#### AcademicCalendar
+```typescript
+interface AcademicCalendar {
+  id: string;
+  year: number;
+  term: string;
+  events: string[];
+  holidays: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+#### SystemConfig
+```typescript
+interface SystemConfig {
+  absenceAlertThresholds: { warning: number; critical: number };
+  backupSchedule: string;
+  reportAutoGeneration: boolean;
+  calendarLockDates: string[];
+  lastUpdated: string;
+}
+```
+
 ### Departments
 ```typescript
 const DEPARTMENTS = [
@@ -493,6 +873,15 @@ const DEPARTMENTS = [
 - `AttendanceStatsCard.tsx` - Statistics display cards
 - `GradeAttendanceChart.tsx` - Grade-wise attendance visualization
 - `CourseAttendanceTable.tsx` - Course attendance data table
+
+#### Production Feature Components
+- `ParentPortal.tsx` - Parent account management and child monitoring
+- `AttendanceCorrectionPanel.tsx` - Attendance modification request and approval system
+- `AbsenceAlertDashboard.tsx` - Automated absence monitoring and alert management
+- `StudentTimeline.tsx` - Complete student activity history visualization
+- `BackupRestorePanel.tsx` - Data backup creation and restoration interface
+- `TeacherPerformanceDashboard.tsx` - Teacher metrics and performance analytics
+- `AcademicCalendarManager.tsx` - Event scheduling and calendar management
 
 ### Utility Components
 - `InstallPrompt.tsx` - PWA installation prompt
@@ -554,6 +943,38 @@ const DEPARTMENTS = [
 - Results publishing management
 - Grade-wise access control
 - Publication timestamps
+
+### Production Services (`productionServices.ts`)
+
+#### Parent Management Service
+- `ParentService.createParentForStudent()` - Auto-generate parent accounts
+- `ParentService.linkStudents()` - Link children to parent accounts
+- `ParentService.generateCredentials()` - Create secure login credentials
+
+#### Security & Audit Services
+- `LoginTrackingService.logLoginAttempt()` - Track authentication events
+- `ActivityLogger.logActivity()` - Comprehensive activity monitoring
+- `EnhancedActivityLogger.logSystemEvent()` - System event tracking
+
+#### Attendance Management Services
+- `AttendanceCorrectionService.requestCorrection()` - Submit attendance changes
+- `AttendanceCorrectionService.approveCorrection()` - Approve modification requests
+- `AbsenceAlertService.checkAndCreateAlerts()` - Automated absence monitoring
+
+#### Reporting Services
+- `ReportService.generateWeeklyReport()` - Weekly attendance summaries
+- `ReportService.generateMonthlyReport()` - Monthly performance analytics
+- `ReportService.exportToPDF()` - PDF report generation
+
+#### Academic Services
+- `TimelineService.addTimelineEntry()` - Student activity tracking
+- `CalendarService.createEvent()` - Event scheduling and management
+- `TeacherMetricsService.calculateMetrics()` - Teacher performance analysis
+
+#### System Management Services
+- `BackupService.createBackup()` - Data backup creation
+- `BackupService.restoreFromBackup()` - Data recovery operations
+- `SystemConfigService.updateSettings()` - System configuration management
 
 ---
 

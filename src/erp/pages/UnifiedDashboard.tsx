@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 import { StatCard } from '../components/StatCard';
 import { ChartCard } from '../components/ChartCard';
+import { AttendanceDashboard } from '../../components/AttendanceDashboard';
+import { LiveAttendanceTable } from '../../components/LiveAttendanceTable';
+import { CourseStats } from '../../components/CourseStats';
 import { useAuth } from '../../contexts/AuthContext';
 import {
     LineChart,
@@ -260,6 +263,32 @@ export const UnifiedDashboard: React.FC = () => {
                         </LineChart>
                     </ResponsiveContainer>
                 </ChartCard>
+            </div>
+
+            {/* Real-Time Attendance Section */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Activity className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">Live Attendance Monitoring</h2>
+                        <p className="text-gray-600">Real-time attendance data from QR code scans</p>
+                    </div>
+                </div>
+
+                {/* Attendance Overview */}
+                <AttendanceDashboard />
+
+                {/* Live Table and Course Stats */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div className="xl:col-span-2">
+                        <LiveAttendanceTable limit={20} showFilters={false} />
+                    </div>
+                    <div>
+                        <CourseStats />
+                    </div>
+                </div>
             </div>
 
             {/* Quick Actions - Super Admin Only */}

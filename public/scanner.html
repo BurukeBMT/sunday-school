@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>QR Attendance Scanner</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+
+        .page {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 18px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 32px;
+            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+            padding: 20px;
+            margin-bottom: 18px;
+        }
+
+        .header {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .title {
+            font-size: 1.85rem;
+            line-height: 1.05;
+            margin: 0;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: #4b5563;
+            font-size: 0.975rem;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .status-success {
+            background: #ecfdf5;
+            color: #166534;
+        }
+
+        .status-already {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-neutral {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .button {
+            width: 100%;
+            border: none;
+            border-radius: 18px;
+            padding: 14px 18px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+        }
+
+        .button:active {
+            transform: translateY(1px);
+        }
+
+        .button-primary {
+            background: #4f46e5;
+            color: #ffffff;
+            box-shadow: 0 14px 40px rgba(79, 70, 229, 0.24);
+        }
+
+        .button-secondary {
+            background: #f8fafc;
+            color: #111827;
+            border: 1px solid #e5e7eb;
+        }
+
+        .button-danger {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .button:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .grid-two {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .panel {
+            display: grid;
+            gap: 14px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-heading h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            letter-spacing: -0.01em;
+        }
+
+        .panel-heading span {
+            font-size: 0.925rem;
+            color: #6b7280;
+        }
+
+        .reader-frame {
+            border-radius: 28px;
+            overflow: hidden;
+            background: #111827;
+            min-height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .reader-frame::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border: 2px solid rgba(255, 255, 255, 0.14);
+            border-radius: 28px;
+        }
+
+        #reader {
+            width: 100%;
+            min-height: 320px;
+        }
+
+        .info-row {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .info-item {
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 16px;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .info-label {
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .info-value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .small {
+            font-size: 0.92rem;
+            color: #475569;
+            line-height: 1.65;
+        }
+
+        .footer-note {
+            font-size: 0.88rem;
+            color: #475569;
+            margin-top: 12px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            border: 3px solid rgba(255, 255, 255, 0.45);
+            border-top-color: rgba(255, 255, 255, 0.95);
+            animation: spin 0.85s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media(max-width: 640px) {
+            .grid-two {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <section class="header">
+            <div>
+                <p class="subtitle">Fast mobile QR attendance scanner</p>
+                <h1 class="title">Attendance Scanner</h1>
+            </div>
+            <div id="pageStatus" class="status-chip status-neutral">Scanning…</div>
+        </section>
+
+        <article class="card panel">
+            <div class="panel-heading">
+                <div>
+                    <h2>Scanner Preview</h2>
+                    <p class="small">Keep your camera pointed at the QR code until the scan completes.</p>
+                </div>
+                <button id="toggleButton" class="button button-primary">Start Scanner</button>
+            </div>
+
+            <div class="reader-frame">
+                <div id="reader">Camera preview will appear here.</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-item">
+                    <div class="info-label">Last Scan</div>
+                    <div id="lastScanValue" class="info-value">None yet</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Student / Item</div>
+                    <div id="lastNameValue" class="info-value">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Time</div>
+                    <div id="lastTimeValue" class="info-value">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Status</div>
+                    <div id="lastStatusValue" class="info-value">Waiting</div>
+                </div>
+            </div>
+
+            <div class="panel-heading">
+                <div>
+                    <h2>Response</h2>
+                    <p class="small">Messages from the backend and network errors appear here.</p>
+                </div>
+            </div>
+            <div id="responseMessage" class="info-item"
+                style="background:#f8fafc; min-height: 72px; display:flex; align-items:center;"></div>
+            <p class="footer-note">Supports both old QR IDs like <strong>FHST00001</strong> and JSON payloads like
+                <strong>{"id":"FHST00001","course":"Bible Study"}</strong>.</p>
+        </article>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js"></script>
+    <script>
+        const SCRIPT_URL = 'YOUR_SCRIPT_URL_HERE';
+        const DEFAULT_COURSE = 'General';
+        const LOCK_DELAY_MS = 3200;
+        const STATUS = { success: 'success', already: 'already', error: 'error', neutral: 'neutral' };
+
+        const pageStatus = document.getElementById('pageStatus');
+        const toggleButton = document.getElementById('toggleButton');
+        const responseMessage = document.getElementById('responseMessage');
+        const lastScanValue = document.getElementById('lastScanValue');
+        const lastNameValue = document.getElementById('lastNameValue');
+        const lastTimeValue = document.getElementById('lastTimeValue');
+        const lastStatusValue = document.getElementById('lastStatusValue');
+
+        let html5QrCode = null;
+        let scanningActive = false;
+        let scanLocked = false;
+        let processing = false;
+
+        const tone = (frequency, duration, volume = 0.18) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = ctx.createOscillator();
+                const gain = ctx.createGain();
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                gain.gain.value = volume;
+                oscillator.connect(gain);
+                gain.connect(ctx.destination);
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    ctx.close();
+                }, duration);
+            } catch (error) {
+                console.warn('Audio unavailable', error);
+            }
+        };
+
+        const playSuccess = () => {
+            tone(880, 120);
+            vibrate(200);
+        };
+
+        const playError = () => {
+            tone(220, 240);
+            vibrate([180, 80, 120]);
+        };
+
+        const vibrate = pattern => {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        };
+
+        const setStatus = (state, message) => {
+            pageStatus.textContent = message || ({
+                [STATUS.success]: 'Success',
+                [STATUS.already]: 'Already scanned',
+                [STATUS.error]: 'Error',
+                [STATUS.neutral]: 'Scanning…'
+            })[state] || 'Waiting';
+            pageStatus.className = `status-chip status-${state}`;
+            responseMessage.textContent = message || '';
+            if (message) {
+                responseMessage.style.color = '#0f172a';
+            }
+        };
+
+        const updateLastScan = ({ id, name, course, status }) => {
+            lastScanValue.textContent = id || 'Unknown';
+            lastNameValue.textContent = name || course || 'Unknown';
+            lastTimeValue.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            lastStatusValue.textContent = status === STATUS.success ? 'Success' : status === STATUS.already ? 'Already' : status === STATUS.error ? 'Error' : 'Scanning';
+            lastStatusValue.style.color = status === STATUS.success ? '#166534' : status === STATUS.already ? '#92400e' : status === STATUS.error ? '#991b1b' : '#475569';
+        };
+
+        const parsePayload = decodedText => {
+            const trimmed = decodedText.trim();
+            if (!trimmed) return { id: '', course: DEFAULT_COURSE, name: '' };
+
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (parsed && typeof parsed === 'object' && parsed.id) {
+                    return {
+                        id: String(parsed.id).trim(),
+                        course: parsed.course ? String(parsed.course).trim() : DEFAULT_COURSE,
+                        name: parsed.name ? String(parsed.name).trim() : String(parsed.id).trim()
+                    };
+                }
+            } catch (_ignored) {
+                // Not JSON — fallback to plain ID
+            }
+
+            return { id: trimmed, course: DEFAULT_COURSE, name: trimmed };
+        };
+
+        const normalizeStatusText = text => {
+            const lower = String(text || '').toLowerCase();
+            if (lower.includes('already') || lower.includes('duplicate')) return STATUS.already;
+            if (lower.includes('error') || lower.includes('failed') || lower.includes('invalid') || lower.includes('network')) return STATUS.error;
+            return STATUS.success;
+        };
+
+        const handleScanResult = async decodedText => {
+            if (scanLocked || processing) return;
+            scanLocked = true;
+            processing = true;
+            toggleButton.disabled = true;
+            setStatus(STATUS.neutral, 'Processing…');
+
+            const payload = parsePayload(decodedText);
+            if (!payload.id) {
+                setStatus(STATUS.error, 'Invalid QR code. Please try again.');
+                updateLastScan({ id: 'Unknown', name: 'Unknown', course: payload.course, status: STATUS.error });
+                playError();
+                scanLocked = false;
+                processing = false;
+                toggleButton.disabled = false;
+                return;
+            }
+
+            updateLastScan({ id: payload.id, name: payload.name, course: payload.course, status: STATUS.neutral });
+
+            try {
+                const url = `${SCRIPT_URL}?id=${encodeURIComponent(payload.id)}&course=${encodeURIComponent(payload.course)}`;
+                const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+
+                if (!response.ok) {
+                    throw new Error('Network error. Please try again.');
+                }
+
+                const text = await response.text();
+                let json;
+                try { json = JSON.parse(text); } catch (_e) { json = null; }
+
+                const message = json && json.message ? json.message : text.trim() || 'Completed successfully.';
+                const status = json && json.status ? json.status : normalizeStatusText(message);
+
+                if (status === STATUS.error) {
+                    setStatus(STATUS.error, message || 'Network error. Please try again.');
+                    updateLastScan({ id: payload.id, name: payload.name, course: payload.course, status: STATUS.error });
+                    playError();
+                } else if (status === STATUS.already) {
+                    setStatus(STATUS.already, message || 'Attendance already recorded.');
+                    updateLastScan({ id: payload.id, name: payload.name, course: payload.course, status: STATUS.already });
+                    playSuccess();
+                } else {
+                    setStatus(STATUS.success, message || 'Attendance recorded successfully.');
+                    updateLastScan({ id: payload.id, name: payload.name, course: payload.course, status: STATUS.success });
+                    playSuccess();
+                }
+            } catch (error) {
+                console.error(error);
+                const message = error instanceof Error ? error.message : 'Network error. Please try again.';
+                setStatus(STATUS.error, message || 'Network error. Please try again.');
+                updateLastScan({ id: payload.id, name: payload.name, course: payload.course, status: STATUS.error });
+                playError();
+            } finally {
+                setTimeout(() => {
+                    scanLocked = false;
+                    if (!processing) return;
+                    responseMessage.textContent = responseMessage.textContent || '';
+                }, LOCK_DELAY_MS);
+                processing = false;
+                toggleButton.disabled = false;
+            }
+        };
+
+        const onScanFailure = error => {
+            if (!error || typeof error !== 'string') return;
+            const normalized = error.toLowerCase();
+            if (normalized.includes('no qr code')) return;
+            console.warn('Scan failed:', error);
+        };
+
+        const startScanner = async () => {
+            if (scanningActive) return;
+            if (!SCRIPT_URL || SCRIPT_URL.includes('YOUR_SCRIPT_URL_HERE')) {
+                setStatus(STATUS.error, 'Please update SCRIPT_URL in the code before scanning.');
+                return;
+            }
+
+            try {
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    setStatus(STATUS.error, 'Camera requires HTTPS. Open the page over a secure connection.');
+                    return;
+                }
+
+                html5QrCode = new Html5Qrcode('reader');
+                const devices = await Html5Qrcode.getCameras();
+                if (!devices || devices.length === 0) {
+                    setStatus(STATUS.error, 'No camera found on this device.');
+                    return;
+                }
+
+                const cameraId = devices[0].id;
+                await html5QrCode.start(
+                    { deviceId: { exact: cameraId } },
+                    { fps: 10, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0 },
+                    handleScanResult,
+                    onScanFailure
+                );
+
+                scanningActive = true;
+                toggleButton.textContent = 'Stop Scanner';
+                setStatus(STATUS.neutral, 'Scanning…');
+            } catch (error) {
+                console.error('Scanner start failed:', error);
+                setStatus(STATUS.error, 'Unable to start camera. Please try again and ensure camera access is allowed.');
+            }
+        };
+
+        const stopScanner = async () => {
+            if (!scanningActive || !html5QrCode) return;
+            try {
+                await html5QrCode.stop();
+                await html5QrCode.clear();
+            } catch (error) {
+                console.warn('Stop scanner failed:', error);
+            }
+            scanningActive = false;
+            toggleButton.textContent = 'Start Scanner';
+            setStatus(STATUS.neutral, 'Scanner stopped. Tap to restart.');
+        };
+
+        toggleButton.addEventListener('click', () => {
+            if (scanningActive) {
+                stopScanner();
+            } else {
+                startScanner();
+            }
+        });
+
+        setStatus(STATUS.neutral, 'Ready to scan');
+    </script>
+</body>
+
+</html>
