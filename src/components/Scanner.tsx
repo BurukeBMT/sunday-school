@@ -1,14 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
-import {
-  ref,
-  query,
-  orderByChild,
-  equalTo,
-  get,
-  push,
-  set
-} from 'firebase/database';
+import { ref, get } from 'firebase/database';
 import {
   QrCode,
   CheckCircle2,
@@ -22,9 +14,10 @@ import {
 import { database, handleDatabaseError, OperationType } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Course, AttendanceLog } from '../types';
+import { Course } from '../types';
 import { DEPARTMENTS } from '../types';
 import { format } from 'date-fns';
+import { sendScan } from '../lib/sheetsApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -33,6 +26,7 @@ export const Scanner: React.FC = () => {
   const { t } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string; studentName?: string } | null>(null);
   const [scannerInitializing, setScannerInitializing] = useState(false);
@@ -273,119 +267,34 @@ export const Scanner: React.FC = () => {
         throw new Error('Invalid QR code format');
       }
 
-      // 1. Validate Student
-      let studentSnap;
-      try {
-        studentSnap = await get(ref(database, 'students/' + id));
-      } catch (err) {
-        console.error('Error fetching student:', err);
-        setResult({ success: false, message: 'Error validating student. Please try again.' });
-        setLoading(false);
-        return;
-      }
+      const response = await sendScan({
+        id,
+        token,
+        course: selectedCourse,
+        markedBy: profile?.uid || null
+      });
 
-      if (!studentSnap || !studentSnap.exists()) {
-        setResult({ success: false, message: t.invalidQrCode });
-        setLoading(false);
-        return;
-      }
-
-      const studentData = studentSnap.val();
-      if (studentData.qrToken !== token) {
-        setResult({ success: false, message: t.invalidQrCode });
-        setLoading(false);
-        return;
-      }
-
-      // Check if student belongs to course departments
-      const course = courses.find(c => c.id === selectedCourse);
-      if (course) {
-        const courseDepartments = course.departments || [course.department];
-        if (!courseDepartments.includes(studentData.department)) {
-          setResult({
-            success: false,
-            message: `Student is not in the assigned departments (${courseDepartments.join(', ')}). Please scan a student from these departments.`,
-            studentName: studentData.fullName
-          });
-          setLoading(false);
-          return;
-        }
-      }
-
-      const today = format(new Date(), 'yyyy-MM-dd');
-
-      // 2. Check Duplicate
-      let duplicateSnap;
-      try {
-        const logsRef = ref(database, 'attendance_logs');
-        const duplicateQuery = query(logsRef, orderByChild('studentId'), equalTo(id));
-        duplicateSnap = await get(duplicateQuery);
-      } catch (err) {
-        console.error('Error checking duplicates:', err);
-        setResult({ success: false, message: 'Error checking attendance records. Please try again.' });
-        setLoading(false);
-        return;
-      }
-
-      if (duplicateSnap && duplicateSnap.exists()) {
-        const logs = duplicateSnap.val();
-        const isDuplicate = Object.values(logs).some((log: any) =>
-          log.studentId === id && log.courseId === selectedCourse && log.date === today
-        );
-        if (isDuplicate) {
-          setResult({
-            success: false,
-            message: t.attendanceAlreadyRecorded,
-            studentName: studentData.fullName
-          });
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 3. Record Attendance
-      try {
-        const course = courses.find(c => c.id === selectedCourse);
-        await push(ref(database, 'attendance_logs'), {
-          studentId: id,
-          courseId: selectedCourse,
-          department: studentData.department, // Use student's actual department
-          date: today,
-          time: format(new Date(), 'HH:mm:ss'),
-          markedBy: profile?.uid,
-          method: 'qr',
-          createdAt: Date.now()
-        });
-      } catch (err) {
-        console.error('Error recording attendance:', err);
-        setResult({ success: false, message: 'Error recording attendance. Please try again.' });
-        setLoading(false);
+      if (!response.success) {
+        setResult({ success: false, message: response.error || t.invalidQrCode });
         return;
       }
 
       setResult({
         success: true,
-        message: t.attendanceRecorded,
-        studentName: studentData.fullName
+        message: response.message || t.attendanceRecorded,
+        studentName: response.data?.fullName || response.data?.studentName || undefined
       });
 
-      // Clear success message after 3 seconds and continue scanning
       setTimeout(() => {
         setResult(null);
       }, 3000);
-
-      // Keep scanner running for continuous scanning
-
     } catch (err) {
       console.error('Scan processing error:', err);
       setResult({ success: false, message: t.invalidQrCode });
 
-      // Clear error message after 3 seconds and continue scanning
       setTimeout(() => {
         setResult(null);
       }, 3000);
-
-      // Keep scanner running even on error for continuous scanning
     } finally {
       setLoading(false);
     }

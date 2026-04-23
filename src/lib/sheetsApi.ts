@@ -1,3 +1,5 @@
+import type { GradeRanking, LeaderboardEntry, TranscriptData } from '../types';
+
 const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyytm8cMtva9FuLmBA80FTgp0IJko5LfrAMrkhLdikXWUzP5i2J-PMaC3BeGD3tElyG/exec';
 
 export interface GradingRule {
@@ -9,8 +11,11 @@ export interface GradingRule {
 export interface MarkEntry {
     studentId: string;
     course: string;
-    type: string;
+    assessmentType: string;
     score: number;
+    maxScore?: number;
+    date?: string;
+    teacherId?: string;
 }
 
 export interface StudentResult {
@@ -26,32 +31,67 @@ export interface SheetsApiResponse {
     error?: string;
 }
 
-/**
- * Fetch all results from Google Sheets
- */
+const handleResponse = async <T = any>(response: Response): Promise<T> => {
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    if (!data.success) {
+        throw new Error(data.error || 'Google Sheets API request failed');
+    }
+
+    return data.data as T;
+};
+
+const buildUrl = (params: Record<string, string | number | undefined>) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            queryParams.set(key, String(value));
+        }
+    });
+    return `${SHEETS_API_URL}?${queryParams.toString()}`;
+};
+
+const normalizeResultRows = (rows: any[]): StudentResult[] => {
+    return rows.map((row) => ({
+        studentId: String(row.studentId || row.studentid || row.id || ''),
+        course: String(row.course || row.courseName || ''),
+        total: Number(row.total ?? row.totalScore ?? 0),
+        rank: Number(row.rank ?? 0)
+    }));
+};
+
+export const fetchStudents = async (): Promise<any[]> => {
+    try {
+        const url = buildUrl({ type: 'students' });
+        const response = await fetch(url, { method: 'GET' });
+        return await handleResponse<any[]>(response);
+    } catch (error) {
+        console.error('Error fetching students from Google Sheets:', error);
+        throw error;
+    }
+};
+
+export const fetchAttendanceLogs = async (): Promise<any[]> => {
+    try {
+        const url = buildUrl({ type: 'attendance' });
+        const response = await fetch(url, { method: 'GET' });
+        return await handleResponse<any[]>(response);
+    } catch (error) {
+        console.error('Error fetching attendance logs from Google Sheets:', error);
+        throw error;
+    }
+};
+
 export const fetchResults = async (): Promise<StudentResult[]> => {
     try {
-        const response = await fetch(SHEETS_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                type: 'fetchResults'
-            })
-        });
-
-        const data: SheetsApiResponse = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch results');
-        }
-
-        return data.data || [];
+        const url = buildUrl({ type: 'results' });
+        const response = await fetch(url, { method: 'GET' });
+        const data = await handleResponse<any[]>(response);
+        return normalizeResultRows(data);
     } catch (error) {
         console.error('Error fetching results from Google Sheets:', error);
         throw error;
@@ -64,22 +104,53 @@ export const fetchResults = async (): Promise<StudentResult[]> => {
 export const fetchStudentResults = async (studentId: string): Promise<StudentResult[]> => {
     try {
         const allResults = await fetchResults();
-        return allResults.filter(result => result.studentId === studentId);
+        return allResults.filter((result) => result.studentId === studentId);
     } catch (error) {
         console.error('Error fetching student results:', error);
         throw error;
     }
 };
 
-/**
- * Send marks to Google Sheets
- */
+export const sendScan = async (scanPayload: {
+    id: string;
+    token: string;
+    course: string;
+    markedBy?: string | null;
+}): Promise<SheetsApiResponse> => {
+    try {
+        const response = await fetch(SHEETS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'scan',
+                payload: scanPayload
+            })
+        });
+
+        const data: SheetsApiResponse = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Error sending scan payload to Google Sheets:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
+    }
+};
+
 export const sendMarks = async (marks: MarkEntry[]): Promise<SheetsApiResponse> => {
     try {
         const response = await fetch(SHEETS_API_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 type: 'marks',
@@ -103,15 +174,12 @@ export const sendMarks = async (marks: MarkEntry[]): Promise<SheetsApiResponse> 
     }
 };
 
-/**
- * Send grading rules to Google Sheets
- */
 export const sendGradingRules = async (rules: GradingRule[]): Promise<SheetsApiResponse> => {
     try {
         const response = await fetch(SHEETS_API_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 type: 'rules',
@@ -135,50 +203,23 @@ export const sendGradingRules = async (rules: GradingRule[]): Promise<SheetsApiR
     }
 };
 
-/**
- * Fetch grading rules from Google Sheets
- */
 export const fetchGradingRules = async (course?: string): Promise<GradingRule[]> => {
     try {
-        const payload: any = { type: 'fetchGradingRules' };
-        if (course) {
-            payload.course = course;
-        }
-
-        const response = await fetch(SHEETS_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data: SheetsApiResponse = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch grading rules');
-        }
-
-        return data.data || [];
+        const url = buildUrl({ type: 'gradingRules', course });
+        const response = await fetch(url, { method: 'GET' });
+        return await handleResponse<GradingRule[]>(response);
     } catch (error) {
         console.error('Error fetching grading rules from Google Sheets:', error);
         throw error;
     }
 };
 
-/**
- * Get grade-wise ranking for a specific grade
- */
 export const getGradeRanking = async (grade: string): Promise<GradeRanking[]> => {
     try {
         const response = await fetch(SHEETS_API_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 type: 'getGradeRanking',
@@ -203,15 +244,12 @@ export const getGradeRanking = async (grade: string): Promise<GradeRanking[]> =>
     }
 };
 
-/**
- * Get top students by grade for leaderboard
- */
 export const getTopStudentsByGrade = async (grade: string, limit = 10): Promise<LeaderboardEntry[]> => {
     try {
         const response = await fetch(SHEETS_API_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 type: 'getTopStudentsByGrade',
