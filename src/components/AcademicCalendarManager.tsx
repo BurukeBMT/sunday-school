@@ -9,7 +9,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Calendar, Plus, Clock, MapPin, BookOpen, GraduationCap, Party, AlertTriangle } from 'lucide-react';
+import { Calendar, Plus, Clock, MapPin, BookOpen, GraduationCap, Gift, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export const AcademicCalendarManager: React.FC = () => {
@@ -94,7 +94,7 @@ export const AcademicCalendarManager: React.FC = () => {
             case 'class':
                 return <BookOpen className="w-4 h-4 text-blue-500" />;
             case 'holiday':
-                return <Party className="w-4 h-4 text-green-500" />;
+                return <Gift className="w-4 h-4 text-green-500" />;
             case 'exam':
                 return <GraduationCap className="w-4 h-4 text-purple-500" />;
             case 'event':
@@ -435,7 +435,7 @@ export const AcademicCalendarManager: React.FC = () => {
                             <span className="text-sm">Class</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Party className="w-4 h-4 text-green-500" />
+                            <Gift className="w-4 h-4 text-green-500" />
                             <span className="text-sm">Holiday</span>
                         </div>
                         <div className="flex items-center gap-2">

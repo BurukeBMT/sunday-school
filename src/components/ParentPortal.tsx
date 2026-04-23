@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { ParentService, LoginTrackingService } from '../lib/productionServices';
 import { Parent, Student } from '../types';
+import { get, ref } from 'firebase/database';
+import { database } from '../firebase';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -24,9 +26,7 @@ export const ParentPortal: React.FC = () => {
 
         try {
             // Find parent by UID
-            const parentsSnapshot = await import('firebase/database').then(({ get, ref }) =>
-                get(ref(import('../firebase').then(m => m.database), 'parents'))
-            );
+            const parentsSnapshot = await get(ref(database, 'parents'));
 
             if (parentsSnapshot.exists()) {
                 const parents = parentsSnapshot.val();

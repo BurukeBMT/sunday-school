@@ -5,6 +5,10 @@ import { Student, Parent } from '../types';
 import { ref, get } from 'firebase/database';
 import { database } from '../firebase';
 import { Loader2, Users, Calendar, BookOpen, TrendingUp, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from './ui/alert';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 export const ParentDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -30,7 +34,7 @@ export const ParentDashboard: React.FC = () => {
 
                     if (parentEntry) {
                         const [parentId, parentData] = parentEntry;
-                        const parentInfo: Parent = { parentId, ...parentData };
+                        const parentInfo: Parent = { parentId, ...(parentData as any) };
                         setParent(parentInfo);
 
                         // Load children

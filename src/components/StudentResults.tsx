@@ -53,6 +53,12 @@ export const StudentResults: React.FC = () => {
         loadStudentData();
     }, []);
 
+    // Calculate statistics
+    const totalCourses = results.length;
+    const averageScore = totalCourses > 0 ? results.reduce((sum, result) => sum + result.total, 0) / totalCourses : 0;
+    const highestScore = totalCourses > 0 ? Math.max(...results.map(r => r.total)) : 0;
+    const lowestScore = totalCourses > 0 ? Math.min(...results.map(r => r.total)) : 0;
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">

@@ -27,6 +27,7 @@ export interface StudentResult {
 
 export interface SheetsApiResponse {
     success: boolean;
+    message?: string;
     data?: any;
     error?: string;
 }

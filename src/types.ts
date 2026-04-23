@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'admin' | 'teacher' | 'student' | 'parent';
+export type UserRole = 'superadmin' | 'super_admin' | 'admin' | 'teacher' | 'student' | 'parent';
 
 // Enhanced permission system
 export type PermissionAction = 'view_only' | 'edit_only' | 'approve_only' | 'export_only' | 'full_access';
@@ -130,8 +130,10 @@ export interface GradingRule {
 }
 
 export interface MarkEntry {
+  id?: string;
   studentId: string;
   course: string;
+  assessmentId?: string;
   assessmentType: string;
   score: number;
   maxScore?: number;
@@ -139,10 +141,28 @@ export interface MarkEntry {
   teacherId?: string;
 }
 
+export interface Assessment {
+  id: string;
+  courseId: string;
+  name: string;
+  type: string;
+  grade?: string;
+  maxScore: number;
+  totalMarks?: number;
+  date: string;
+  createdBy?: string;
+  createdAt?: string;
+  teacherId: string;
+}
+
+export type Mark = MarkEntry;
+
 export interface StudentResult {
   studentId: string;
-  course: string;
+  course?: string;
+  grade?: string;
   total: number;
+  average?: number;
   rank: number;
 }
 

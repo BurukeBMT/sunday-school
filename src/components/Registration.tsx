@@ -14,7 +14,7 @@ import { ref, get, set, query, orderByChild, limitToLast } from 'firebase/databa
 import { parse } from 'csv-parse/browser/esm';
 import { printIdCard } from '../lib/printIdCard';
 import { database, handleDatabaseError, OperationType } from '../firebase';
-import { DEPARTMENTS, Student } from '../types';
+import { DEPARTMENTS, GRADES, Student } from '../types';
 import { cn } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -22,7 +22,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 export const Registration: React.FC = () => {
   const { profile } = useAuth();
   const { t } = useLanguage();
-  const [form, setForm] = useState({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0] });
+  const [form, setForm] = useState({ fullName: '', phone: '', email: '', department: DEPARTMENTS[0], grade: '' });
   const [loading, setLoading] = useState(false);
   const [phoneInvalid, setPhoneInvalid] = useState(false);
 
@@ -97,6 +97,7 @@ export const Registration: React.FC = () => {
         phone: form.phone,
         email: form.email,
         department: form.department,
+        grade: form.grade,
         qrToken,
         createdAt: new Date().toISOString()
       };
@@ -167,7 +168,9 @@ export const Registration: React.FC = () => {
           const phone = normalizedRecord['phone'] || normalizedRecord['phone number'] || normalizedRecord['ስልክ'] || '';
           const email = normalizedRecord['email'] || normalizedRecord['email address'] || '';
           let department = normalizedRecord['department'] || normalizedRecord['ምድብ'] || '';
+          let grade = normalizedRecord['grade'] || normalizedRecord['ክፍል'] || '';
           if (!department || !DEPARTMENTS.includes(department)) department = DEPARTMENTS[0];
+          if (!grade || !GRADES.includes(grade)) grade = GRADES[0];
 
           if (!fullName || !phone) {
             errors.push(`Row ${index + 1}: missing required fields (Full Name and Phone are required).`);
@@ -189,6 +192,7 @@ export const Registration: React.FC = () => {
               phone,
               email,
               department,
+              grade,
               qrToken,
               createdAt: new Date().toISOString()
             };
@@ -327,6 +331,16 @@ export const Registration: React.FC = () => {
                       className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none"
                     >
                       {DEPARTMENTS.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Grade</label>
+                    <select
+                      value={form.grade}
+                      onChange={e => setForm({ ...form, grade: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none"
+                    >
+                      {GRADES.map(grade => <option key={grade} value={grade}>{grade}</option>)}
                     </select>
                   </div>
                 </div>

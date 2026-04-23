@@ -193,7 +193,7 @@ export const ActivityLogPanel: React.FC = () => {
                             className="px-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10"
                         >
                             <option value="all">All Resources</option>
-                            {getUniqueResources().map(resource => (
+                            {getUniqueResources().map((resource: string) => (
                                 <option key={resource} value={resource}>
                                     {resource.charAt(0).toUpperCase() + resource.slice(1)}
                                 </option>

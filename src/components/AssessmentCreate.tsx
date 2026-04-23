@@ -36,6 +36,10 @@ export const AssessmentCreate: React.FC<AssessmentCreateProps> = ({
                 courseId: formData.courseId,
                 grade: formData.grade,
                 totalMarks: formData.totalMarks,
+                type: 'exam', // default
+                maxScore: formData.totalMarks,
+                date: new Date().toISOString(),
+                teacherId: auth.currentUser.uid,
                 createdBy: auth.currentUser.uid,
                 createdAt: new Date().toISOString(),
             });

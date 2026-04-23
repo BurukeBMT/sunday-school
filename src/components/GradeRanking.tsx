@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Users, AlertCircle } from 'lucide-react';
 import { getGradeRanking } from '../lib/sheetsApi';
-import { GradeRanking, GRADES } from '../types';
+import { GradeRanking as GradeRankingType, GRADES } from '../types';
 
 export const GradeRanking: React.FC = () => {
     const [selectedGrade, setSelectedGrade] = useState<string>(GRADES[0]);
-    const [rankings, setRankings] = useState<GradeRanking[]>([]);
+    const [rankings, setRankings] = useState<GradeRankingType[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 

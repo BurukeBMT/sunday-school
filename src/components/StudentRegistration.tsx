@@ -3,6 +3,11 @@ import { RegistrationService, RegistrationResult } from '../lib/registrationServ
 import { PDFGenerator } from '../lib/PDFGenerator';
 import { QRGenerator } from '../lib/QRGenerator';
 import { Loader2, Download, QrCode, FileText, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Button } from './ui/button';
+import { Alert, AlertDescription } from './ui/alert';
 
 export const StudentRegistration: React.FC = () => {
     const [formData, setFormData] = useState({
