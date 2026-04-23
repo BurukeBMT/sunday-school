@@ -37,7 +37,7 @@
         root.child('users').child(auth.uid).child('role').val() === 'admin' ||
         root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
         root.child('users').child(auth.uid).child('role').val() === 'super_admin' ||
-        (root.child('users').child(auth.uid).child('role').val() === 'parent' && auth.uid === $parentId)
+        root.child('users').child(auth.uid).child('role').val() === 'teacher'
       )",".write": "auth != null && (
         root.child('users').child(auth.uid).child('role').val() === 'admin' ||
         root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
@@ -64,13 +64,9 @@
       )"
 },
 "attendance_logs": {
-  ".read": "auth != null && (
-        root.child('users').child(auth.uid).child('role').val() === 'admin' ||
-        root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
-        root.child('users').child(auth.uid).child('role').val() === 'super_admin' ||
-        root.child('users').child(auth.uid).child('role').val() === 'teacher' ||
-        root.child('users').child(auth.uid).child('role').val() === 'parent'
-      )",".write": false,".indexOn": [
+  ".read": "auth != null",
+  ".write": false,
+  ".indexOn": [
     "date",
     "courseId",
     "studentId"
@@ -166,8 +162,7 @@
   ".read": "auth != null && (
         root.child('users').child(auth.uid).child('role').val() === 'admin' ||
         root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
-        root.child('users').child(auth.uid).child('role').val() === 'super_admin' ||
-        (root.child('users').child(auth.uid).child('role').val() === 'teacher' && auth.uid === $teacherId)
+        root.child('users').child(auth.uid).child('role').val() === 'super_admin'
       )",".write": "auth != null && (
         root.child('users').child(auth.uid).child('role').val() === 'admin' ||
         root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||

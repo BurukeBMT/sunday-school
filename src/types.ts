@@ -132,8 +132,11 @@ export interface GradingRule {
 export interface MarkEntry {
   studentId: string;
   course: string;
-  type: string;
+  assessmentType: string;
   score: number;
+  maxScore?: number;
+  date?: string;
+  teacherId?: string;
 }
 
 export interface StudentResult {

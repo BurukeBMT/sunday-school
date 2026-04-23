@@ -43,7 +43,27 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, subtitle
 );
 
 export const AttendanceDashboard: React.FC = () => {
-    const { stats, loading } = useAttendanceStats();
+    const { stats, loading, error, isAuthenticated } = useAttendanceStats();
+
+    if (!isAuthenticated) {
+        return (
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center">
+                <UserX size={48} className="mx-auto text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+                <p className="text-gray-600">Please log in to view attendance statistics.</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-red-100 text-center">
+                <UserX size={48} className="mx-auto text-red-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Data</h3>
+                <p className="text-red-600">{error}</p>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

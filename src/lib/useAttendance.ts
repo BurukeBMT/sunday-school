@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ref, onValue, off, query, orderByChild, limitToLast, get } from 'firebase/database';
-import { database } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { database, auth } from '../firebase';
 import {
     AppsScriptAttendanceLog,
     AttendanceStats,
@@ -13,50 +14,71 @@ export const useRealtimeAttendance = () => {
     const [attendanceLogs, setAttendanceLogs] = useState<AppsScriptAttendanceLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        const attendanceRef = ref(database, 'attendance_logs');
+        // Wait for authentication first
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            setIsAuthenticated(!!user);
+            if (!user) {
+                setLoading(false);
+                setError('Please log in to view attendance data');
+                setAttendanceLogs([]);
+                return;
+            }
 
-        const handleData = (snapshot: any) => {
-            try {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    const logs: AppsScriptAttendanceLog[] = Object.entries(data)
-                        .map(([id, log]: [string, any]) => ({
-                            id,
-                            ...log
-                        }))
-                        .sort((a, b) => b.createdAt - a.createdAt); // Most recent first
+            const attendanceRef = ref(database, 'attendance_logs');
 
-                    setAttendanceLogs(logs);
+            const handleData = (snapshot: any) => {
+                try {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const logs: AppsScriptAttendanceLog[] = Object.entries(data)
+                            .map(([id, log]: [string, any]) => ({
+                                id,
+                                ...log
+                            }))
+                            .sort((a, b) => b.createdAt - a.createdAt); // Most recent first
+
+                        setAttendanceLogs(logs);
+                    } else {
+                        setAttendanceLogs([]);
+                    }
+                    setLoading(false);
+                    setError(null);
+                } catch (err) {
+                    console.error('Error processing attendance data:', err);
+                    setError('Failed to load attendance data');
+                    setLoading(false);
+                }
+            };
+
+            const handleError = (err: any) => {
+                console.error('Firebase attendance listener error:', err);
+                if (err.code === 'PERMISSION_DENIED') {
+                    setError('Access denied. Please check your permissions.');
                 } else {
-                    setAttendanceLogs([]);
+                    setError('Failed to connect to attendance data');
                 }
                 setLoading(false);
-                setError(null);
-            } catch (err) {
-                console.error('Error processing attendance data:', err);
-                setError('Failed to load attendance data');
-                setLoading(false);
-            }
-        };
+                setAttendanceLogs([]);
+            };
 
-        const handleError = (err: any) => {
-            console.error('Firebase attendance listener error:', err);
-            setError('Failed to connect to attendance data');
-            setLoading(false);
-        };
+            // Set up real-time listener
+            onValue(attendanceRef, handleData, handleError);
 
-        // Set up real-time listener
-        onValue(attendanceRef, handleData, handleError);
+            // Cleanup function
+            return () => {
+                off(attendanceRef, 'value', handleData);
+            };
+        });
 
-        // Cleanup function
         return () => {
-            off(attendanceRef, 'value', handleData);
+            unsubscribeAuth();
         };
     }, []);
 
-    return { attendanceLogs, loading, error };
+    return { attendanceLogs, loading, error, isAuthenticated };
 };
 
 export const useAttendanceStats = (selectedDate?: string) => {
@@ -68,10 +90,13 @@ export const useAttendanceStats = (selectedDate?: string) => {
         lastUpdated: Date.now()
     });
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     const calculateStats = useCallback(async () => {
         try {
             setLoading(true);
+            setError(null);
 
             // Get today's date or selected date
             const targetDate = selectedDate || new Date().toISOString().split('T')[0];
@@ -108,15 +133,31 @@ export const useAttendanceStats = (selectedDate?: string) => {
             setLoading(false);
         } catch (error) {
             console.error('Error calculating attendance stats:', error);
+            if (error instanceof Error && error.message.includes('permission-denied')) {
+                setError('Access denied. Please log in to view attendance statistics.');
+            } else {
+                setError('Failed to load attendance statistics');
+            }
             setLoading(false);
         }
     }, [selectedDate]);
 
     useEffect(() => {
-        calculateStats();
+        // Wait for authentication
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsAuthenticated(!!user);
+            if (user) {
+                calculateStats();
+            } else {
+                setLoading(false);
+                setError('Please log in to view attendance statistics');
+            }
+        });
+
+        return () => unsubscribe();
     }, [calculateStats]);
 
-    return { stats, loading, recalculate: calculateStats };
+    return { stats, loading, error, isAuthenticated, recalculate: calculateStats };
 };
 
 export const useCourseAttendanceStats = (selectedDate?: string) => {
@@ -187,46 +228,75 @@ export const useCourseAttendanceStats = (selectedDate?: string) => {
 export const useLiveAttendanceTable = (limit: number = 50) => {
     const [liveEntries, setLiveEntries] = useState<LiveAttendanceEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
-        const attendanceRef = query(
-            ref(database, 'attendance_logs'),
-            orderByChild('createdAt'),
-            limitToLast(limit)
-        );
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setIsAuthenticated(!!user);
+            if (!user) {
+                setLoading(false);
+                setError('Please log in to view live attendance data');
+                setLiveEntries([]);
+                return;
+            }
 
-        const handleData = (snapshot: any) => {
-            try {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    const entries: LiveAttendanceEntry[] = Object.entries(data)
-                        .map(([id, log]: [string, any]) => ({
-                            id,
-                            studentName: log.studentName || 'Unknown',
-                            studentId: log.studentId,
-                            course: log.course,
-                            time: log.time,
-                            timestamp: log.createdAt
-                        }))
-                        .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+            const attendanceRef = query(
+                ref(database, 'attendance_logs'),
+                orderByChild('createdAt'),
+                limitToLast(limit)
+            );
 
-                    setLiveEntries(entries);
+            const handleData = (snapshot: any) => {
+                try {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const entries: LiveAttendanceEntry[] = Object.entries(data)
+                            .map(([id, log]: [string, any]) => ({
+                                id,
+                                studentName: log.studentName || 'Unknown',
+                                studentId: log.studentId,
+                                course: log.course,
+                                time: log.time,
+                                timestamp: log.createdAt
+                            }))
+                            .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+
+                        setLiveEntries(entries);
+                    } else {
+                        setLiveEntries([]);
+                    }
+                    setLoading(false);
+                    setError(null);
+                } catch (err) {
+                    console.error('Error processing live attendance data:', err);
+                    setError('Failed to load live attendance data');
+                    setLoading(false);
+                }
+            };
+
+            const handleError = (err: any) => {
+                console.error('Firebase live attendance listener error:', err);
+                if (err.code === 'PERMISSION_DENIED') {
+                    setError('Access denied. Please check your permissions.');
                 } else {
-                    setLiveEntries([]);
+                    setError('Failed to connect to live attendance data');
                 }
                 setLoading(false);
-            } catch (err) {
-                console.error('Error processing live attendance data:', err);
-                setLoading(false);
-            }
-        };
+                setLiveEntries([]);
+            };
 
-        onValue(attendanceRef, handleData);
+            onValue(attendanceRef, handleData, handleError);
+
+            return () => {
+                off(attendanceRef, 'value', handleData);
+            };
+        });
 
         return () => {
-            off(attendanceRef, 'value', handleData);
+            unsubscribe();
         };
     }, [limit]);
 
-    return { liveEntries, loading };
+    return { liveEntries, loading, error, isAuthenticated };
 };
