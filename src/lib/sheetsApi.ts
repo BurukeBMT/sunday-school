@@ -1,6 +1,6 @@
 import type { GradeRanking, LeaderboardEntry, TranscriptData } from '../types';
 
-const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyytm8cMtva9FuLmBA80FTgp0IJko5LfrAMrkhLdikXWUzP5i2J-PMaC3BeGD3tElyG/exec';
+export const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyytm8cMtva9FuLmBA80FTgp0IJko5LfrAMrkhLdikXWUzP5i2J-PMaC3BeGD3tElyG/exec';
 
 export interface GradingRule {
     course: string;
@@ -56,10 +56,30 @@ const buildUrl = (params: Record<string, string | number | undefined>) => {
 const normalizeResultRows = (rows: any[]): StudentResult[] => {
     return rows.map((row) => ({
         studentId: String(row.studentId || row.studentid || row.id || ''),
+        studentName: String(row.studentName || row.studentname || ''),
+        grade: String(row.grade || ''),
         course: String(row.course || row.courseName || ''),
         total: Number(row.total ?? row.totalScore ?? 0),
-        rank: Number(row.rank ?? 0)
+        rank: Number(row.rank ?? 0),
+        letterGrade: String(row.letterGrade || row.lettergrade || ''),
+        status: String(row.status || '')
     }));
+};
+
+export const fetchStudentResults = async (studentId: string, grade: string): Promise<StudentResult[]> => {
+    if (!studentId || !grade) {
+        throw new Error('studentId and grade are required to fetch student results');
+    }
+
+    try {
+        const url = buildUrl({ type: 'studentResults', studentId, grade });
+        const response = await fetch(url, { method: 'GET' });
+        const data = await handleResponse<any[]>(response);
+        return normalizeResultRows(data);
+    } catch (error) {
+        console.error('Error fetching student results from Google Sheets:', error);
+        throw error;
+    }
 };
 
 export const fetchStudents = async (): Promise<any[]> => {
@@ -92,16 +112,6 @@ export const fetchResults = async (): Promise<StudentResult[]> => {
         return normalizeResultRows(data);
     } catch (error) {
         console.error('Error fetching results from Google Sheets:', error);
-        throw error;
-    }
-};
-
-export const fetchStudentResults = async (studentId: string): Promise<StudentResult[]> => {
-    try {
-        const allResults = await fetchResults();
-        return allResults.filter((result) => result.studentId === studentId);
-    } catch (error) {
-        console.error('Error fetching student results:', error);
         throw error;
     }
 };

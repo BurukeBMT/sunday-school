@@ -44,21 +44,46 @@ export const StudentProfile: React.FC = () => {
         loadStudentProfile();
     }, []);
 
+    const resolveStudentRecord = async (): Promise<Student | null> => {
+        if (!auth.currentUser) return null;
+        const uid = auth.currentUser.uid;
+
+        const directRef = ref(database, `students/${uid}`);
+        const directSnap = await get(directRef);
+        if (directSnap.exists()) {
+            return directSnap.val() as Student;
+        }
+
+        const studentsRef = ref(database, 'students');
+        const uidQuery = query(studentsRef, orderByChild('uid'), equalTo(uid));
+        const uidSnap = await get(uidQuery);
+        if (uidSnap.exists()) {
+            const students = uidSnap.val();
+            const firstKey = Object.keys(students)[0];
+            return students[firstKey] as Student;
+        }
+
+        const email = auth.currentUser.email?.trim().toLowerCase();
+        if (email) {
+            const emailQuery = query(studentsRef, orderByChild('email'), equalTo(email));
+            const emailSnap = await get(emailQuery);
+            if (emailSnap.exists()) {
+                const students = emailSnap.val();
+                const firstKey = Object.keys(students)[0];
+                return students[firstKey] as Student;
+            }
+        }
+
+        return null;
+    };
+
     const loadStudentProfile = async () => {
-        if (!auth.currentUser) return;
-
         try {
-            const studentId = auth.currentUser.uid;
-
-            // Get student data from Firebase
-            const studentRef = ref(database, `students/${studentId}`);
-            const studentSnapshot = await get(studentRef);
-
-            if (!studentSnapshot.exists()) {
+            const studentData = await resolveStudentRecord();
+            if (!studentData) {
                 throw new Error('Student data not found');
             }
 
-            const studentData: Student = studentSnapshot.val();
             setStudent(studentData);
 
             // Check if results are published for this grade
@@ -68,15 +93,15 @@ export const StudentProfile: React.FC = () => {
             // Load academic data if published
             if (isPublished) {
                 const [studentResults, transcript] = await Promise.all([
-                    fetchStudentResults(studentId),
-                    getTranscriptData(studentId)
+                    fetchStudentResults(studentData.id, studentData.grade),
+                    getTranscriptData(studentData.id)
                 ]);
                 setResults(studentResults);
                 setTranscriptData(transcript);
             }
 
             // Load attendance statistics
-            await loadAttendanceStats(studentId);
+            await loadAttendanceStats(studentData.id);
 
         } catch (err) {
             setError('Failed to load student profile');
@@ -132,11 +157,11 @@ export const StudentProfile: React.FC = () => {
     };
 
     const handleDownloadTranscript = async () => {
-        if (!auth.currentUser) return;
+        if (!student) return;
 
         setDownloadingTranscript(true);
         try {
-            await generateTranscriptPDF(auth.currentUser.uid);
+            await generateTranscriptPDF(student.id);
         } catch (err) {
             console.error('Error downloading transcript:', err);
         } finally {

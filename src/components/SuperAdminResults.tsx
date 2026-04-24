@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Download, AlertCircle, CheckCircle, Users, BookOpen } from 'lucide-react';
-import { fetchResults } from '../lib/sheetsApi';
+import { fetchResults, SHEETS_API_URL } from '../lib/sheetsApi';
 import { StudentResult } from '../types';
 
 export const SuperAdminResults: React.FC = () => {
@@ -40,7 +40,7 @@ export const SuperAdminResults: React.FC = () => {
 
         try {
             // This would trigger the Google Apps Script to recalculate all grades
-            const response = await fetch('https://script.google.com/macros/s/AKfycbyytm8cMtva9FuLmBA80FTgp0IJko5LfrAMrkhLdikXWUzP5i2J-PMaC3BeGD3tElyG/exec', {
+            const response = await fetch(SHEETS_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -51,7 +51,7 @@ export class RegistrationService {
                 id: studentId,
                 fullName,
                 phone: parentPhone,
-                email: parentEmail,
+                email: studentEmail,
                 department: grade,
                 grade,
                 qrToken,

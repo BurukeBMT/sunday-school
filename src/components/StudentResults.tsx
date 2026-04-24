@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, BookOpen, Award, AlertCircle, Download, FileText, Lock, User } from 'lucide-react';
 import { auth, database } from '../firebase';
-import { ref, get } from 'firebase/database';
+import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
 import { fetchStudentResults } from '../lib/sheetsApi';
 import { checkResultsPublished } from '../lib/resultsControl';
 import { generateTranscriptPDF } from '../lib/generateTranscriptPDF';
@@ -16,21 +16,46 @@ export const StudentResults: React.FC = () => {
     const [downloadingTranscript, setDownloadingTranscript] = useState(false);
 
     useEffect(() => {
+        const resolveStudentRecord = async (): Promise<Student | null> => {
+            if (!auth.currentUser) return null;
+            const uid = auth.currentUser.uid;
+
+            const directRef = ref(database, `students/${uid}`);
+            const directSnap = await get(directRef);
+            if (directSnap.exists()) {
+                return directSnap.val() as Student;
+            }
+
+            const studentsRef = ref(database, 'students');
+            const uidQuery = query(studentsRef, orderByChild('uid'), equalTo(uid));
+            const uidSnap = await get(uidQuery);
+            if (uidSnap.exists()) {
+                const students = uidSnap.val();
+                const firstKey = Object.keys(students)[0];
+                return students[firstKey] as Student;
+            }
+
+            const email = auth.currentUser.email?.trim().toLowerCase();
+            if (email) {
+                const emailQuery = query(studentsRef, orderByChild('email'), equalTo(email));
+                const emailSnap = await get(emailQuery);
+                if (emailSnap.exists()) {
+                    const students = emailSnap.val();
+                    const firstKey = Object.keys(students)[0];
+                    return students[firstKey] as Student;
+                }
+            }
+
+            return null;
+        };
+
         const loadStudentData = async () => {
-            if (!auth.currentUser) return;
-
             try {
-                const studentId = auth.currentUser.uid;
-
-                // Get student data from Firebase
-                const studentRef = ref(database, `students/${studentId}`);
-                const studentSnapshot = await get(studentRef);
-
-                if (!studentSnapshot.exists()) {
+                const studentData = await resolveStudentRecord();
+                if (!studentData) {
                     throw new Error('Student data not found');
                 }
 
-                const studentData: Student = studentSnapshot.val();
                 setStudent(studentData);
 
                 // Check if results are published for this grade
@@ -39,7 +64,7 @@ export const StudentResults: React.FC = () => {
 
                 if (isPublished) {
                     // Load results only if published
-                    const studentResults = await fetchStudentResults(studentId);
+                    const studentResults = await fetchStudentResults(studentData.id, studentData.grade);
                     setResults(studentResults);
                 }
             } catch (err) {
@@ -115,11 +140,11 @@ export const StudentResults: React.FC = () => {
     }
 
     const handleDownloadTranscript = async () => {
-        if (!auth.currentUser) return;
+        if (!student) return;
 
         setDownloadingTranscript(true);
         try {
-            await generateTranscriptPDF(auth.currentUser.uid);
+            await generateTranscriptPDF(student.id);
         } catch (err) {
             console.error('Error downloading transcript:', err);
             // You could add a toast notification here

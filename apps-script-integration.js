@@ -62,6 +62,45 @@ const getCurrentTimestamps = () => {
     return { now, date, time };
 };
 
+const STUDENT_ID_REGEX = /^FHST\d{5}$/;
+const QR_TOKEN_REGEX = /^[A-Za-z0-9_-]{12,64}$/;
+
+const isValidStudentId = (id) => STUDENT_ID_REGEX.test(String(id || '').trim());
+const isValidQrToken = (token) => QR_TOKEN_REGEX.test(String(token || '').trim());
+
+const fetchFirebaseJson = (path) => {
+    if (!CONFIG.FIREBASE_URL) return null;
+    const baseUrl = String(CONFIG.FIREBASE_URL).replace(/\/+$/, '');
+    const cleanPath = String(path || '').replace(/^\/+/, '');
+    const url = `${baseUrl}/${cleanPath}${CONFIG.FIREBASE_AUTH ? `?auth=${CONFIG.FIREBASE_AUTH}` : ''}`;
+
+    try {
+        const response = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+        const code = response.getResponseCode();
+        if (code >= 200 && code < 300) {
+            return JSON.parse(response.getContentText());
+        }
+    } catch (err) {
+        console.error('Firebase fetch failed:', err);
+    }
+    return null;
+};
+
+const isResultsPublished = (grade) => {
+    const normalizedGrade = String(grade || '').trim();
+    if (!normalizedGrade) return false;
+    if (!CONFIG.FIREBASE_URL) return true;
+
+    const publishedState = fetchFirebaseJson(`resultsControl/${encodeURIComponent(normalizedGrade)}.json`);
+    return Boolean(publishedState && publishedState.isPublished === true);
+};
+
+const getStudentResults = (studentId) => {
+    const normalizedId = String(studentId || '').trim();
+    if (!normalizedId) return [];
+    return getSheetRows(CONFIG.SHEETS.results).filter((row) => String(row.studentid || row.studentId || '').trim() === normalizedId);
+};
+
 const appendSheetRow = (sheetName, row) => {
     const sheet = openSheet(sheetName);
     if (!sheet) return false;
@@ -166,6 +205,14 @@ const processStudentRegistration = (payload) => {
         return { success: false, error: 'Missing required student registration fields.' };
     }
 
+    if (!isValidStudentId(studentId)) {
+        return { success: false, error: 'Student ID must follow the FHST00001 format.' };
+    }
+
+    if (!isValidQrToken(qrToken)) {
+        return { success: false, error: 'QR token must be 12-64 characters with only letters, numbers, underscore, or hyphen.' };
+    }
+
     const existingStudent = getSheetRows(CONFIG.SHEETS.roster).find((row) => {
         return String(row.studentid || row.id || '').trim() === studentId ||
             String(row.qrtoken || row.qr_token || '').trim() === qrToken;
@@ -218,12 +265,20 @@ const hasDuplicateAttendance = (studentId, course, date) => {
 
 const processScan = (payload) => {
     const studentId = String(payload.id || payload.studentId || '').trim();
-    const token = String(payload.token || payload.qrToken || payload.token || '').trim();
+    const token = String(payload.token || payload.qrToken || '').trim();
     const course = String(payload.course || 'General').trim() || 'General';
     const markedBy = String(payload.markedBy || 'system').trim() || 'system';
 
     if (!studentId || !token) {
         return { success: false, error: 'Student ID and QR token are required.' };
+    }
+
+    if (!isValidStudentId(studentId)) {
+        return { success: false, error: 'Student ID is malformed. Expected FHST00001 format.' };
+    }
+
+    if (!isValidQrToken(token)) {
+        return { success: false, error: 'Invalid QR token format.' };
     }
 
     const student = findStudent(studentId);
@@ -530,6 +585,14 @@ function doGet(e) {
             return createJsonResponse({ success: true, data: getSheetRows(CONFIG.SHEETS.attendance) });
         case 'results':
             return createJsonResponse({ success: true, data: getSheetRows(CONFIG.SHEETS.results) });
+        case 'studentResults':
+            if (!studentId || !grade) {
+                return createJsonResponse({ success: false, error: 'studentId and grade are required for student results.' });
+            }
+            if (!isResultsPublished(grade)) {
+                return createJsonResponse({ success: false, error: 'Results are not published for this grade.' });
+            }
+            return createJsonResponse({ success: true, data: getStudentResults(studentId) });
         case 'gradingRules':
             return createJsonResponse({ success: true, data: getSheetRows(CONFIG.SHEETS.gradingRules).filter((row) => !course || String(row.course || '').trim() === course) });
         case 'gradeRanking':
