@@ -103,6 +103,23 @@ const appendSheetRow = (sheetName, row) => {
     return true;
 };
 
+const writeSheetRows = (sheetName, rows) => {
+    const sheet = openSheet(sheetName);
+    if (!sheet) return false;
+    sheet.clearContents();
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return true;
+    }
+
+    const headers = Object.keys(rows[0]).map((header) => String(header || '').trim());
+    sheet.appendRow(headers);
+
+    const rowValues = rows.map((row) => headers.map((header) => row[header] !== undefined ? row[header] : ''));
+    sheet.getRange(2, 1, rowValues.length, headers.length).setValues(rowValues);
+    return true;
+};
+
 const findStudent = (studentId) => {
     const roster = getSheetRows(CONFIG.SHEETS.roster);
     const normalizedId = String(studentId || '').trim();
@@ -219,7 +236,14 @@ const processScan = (payload) => {
     }
 
     const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
+    let lockAcquired = false;
+    try {
+        lock.waitLock(10000);
+        lockAcquired = true;
+    } catch (err) {
+        return { success: false, error: 'System busy. Please retry the scan in a moment.' };
+    }
+
     try {
         const { now, date, time } = getCurrentTimestamps();
 
@@ -253,7 +277,9 @@ const processScan = (payload) => {
             data: attendanceRow
         };
     } finally {
-        lock.releaseLock();
+        if (lockAcquired) {
+            lock.releaseLock();
+        }
     }
 };
 
@@ -263,20 +289,46 @@ const processMarks = (payload) => {
         return { success: false, error: 'No marks were provided.' };
     }
 
-    marks.forEach((mark) => {
-        appendSheetRow(CONFIG.SHEETS.marks, {
-            studentId: String(mark.studentId || '').trim(),
-            course: String(mark.course || '').trim(),
-            assessmentType: String(mark.assessmentType || mark.type || '').trim(),
-            score: Number(mark.score || 0),
-            maxScore: Number(mark.maxScore || 100),
-            date: String(mark.date || new Date().toISOString()).trim(),
-            teacherId: String(mark.teacherId || '').trim()
+    const validMarks = [];
+    const errors = [];
+
+    marks.forEach((mark, index) => {
+        const studentId = String(mark.studentId || '').trim();
+        const course = String(mark.course || '').trim();
+        const assessmentType = String(mark.assessmentType || mark.type || '').trim();
+        const score = Number(mark.score);
+        const maxScore = Number(mark.maxScore || 100);
+        const date = String(mark.date || new Date().toISOString()).trim();
+        const teacherId = String(mark.teacherId || '').trim();
+
+        if (!studentId || !course || !assessmentType || Number.isNaN(score)) {
+            errors.push(`Invalid mark entry at index ${index}. Required fields: studentId, course, assessmentType, score.`);
+            return;
+        }
+
+        validMarks.push({
+            studentId,
+            course,
+            assessmentType,
+            score,
+            maxScore: Number.isFinite(maxScore) ? maxScore : 100,
+            date,
+            teacherId
         });
     });
 
+    if (validMarks.length === 0) {
+        return { success: false, error: `No valid marks to save. ${errors.join(' ')}` };
+    }
+
+    validMarks.forEach((mark) => appendSheetRow(CONFIG.SHEETS.marks, mark));
     buildResults();
-    return { success: true, message: 'Marks saved and results updated.' };
+
+    return {
+        success: true,
+        message: `Saved ${validMarks.length} mark${validMarks.length === 1 ? '' : 's'} and updated results.`,
+        errors: errors.length ? errors : undefined
+    };
 };
 
 const processRules = (payload) => {
@@ -285,16 +337,34 @@ const processRules = (payload) => {
         return { success: false, error: 'No grading rules were provided.' };
     }
 
-    const normalizedRules = rules.map((rule) => ({
-        course: String(rule.course || '').trim(),
-        type: String(rule.type || '').trim(),
-        weight: Number(rule.weight || 0)
-    }));
+    const normalizedRules = [];
+    const errors = [];
+
+    rules.forEach((rule, index) => {
+        const course = String(rule.course || '').trim();
+        const type = String(rule.type || '').trim();
+        const weight = Number(rule.weight);
+
+        if (!course || !type || Number.isNaN(weight) || weight < 0) {
+            errors.push(`Invalid grading rule at index ${index}. Required fields: course, type, weight >= 0.`);
+            return;
+        }
+
+        normalizedRules.push({ course, type, weight });
+    });
+
+    if (normalizedRules.length === 0) {
+        return { success: false, error: `No valid grading rules to save. ${errors.join(' ')}` };
+    }
 
     writeSheetRows(CONFIG.SHEETS.gradingRules, normalizedRules);
     buildResults();
 
-    return { success: true, message: 'Grading rules saved and results updated.' };
+    return {
+        success: true,
+        message: 'Grading rules saved and results updated.',
+        errors: errors.length ? errors : undefined
+    };
 };
 
 const buildResults = () => {
@@ -338,13 +408,22 @@ const buildResults = () => {
         }, 0);
 
         const normalized = totalWeight > 0 ? Math.min(100, (weightedScore * 100) / totalWeight) : 0;
+        const score = Number(normalized.toFixed(1));
+        const letterGrade = score >= 90 ? 'A'
+            : score >= 80 ? 'B'
+                : score >= 70 ? 'C'
+                    : score >= 60 ? 'D'
+                        : 'F';
+        const status = score >= 60 ? 'Passed' : 'Failed';
 
         results.push({
             studentId,
             studentName: student ? String(student.fullname || student.fullName || student.name || '') : '',
             grade: student ? String(student.grade || '') : '',
             course,
-            total: Number(normalized.toFixed(1)),
+            total: score,
+            letterGrade,
+            status,
             updatedAt: new Date().toISOString()
         });
     });
@@ -370,6 +449,8 @@ const buildResults = () => {
         course: item.course,
         total: item.total,
         rank: item.rank,
+        letterGrade: item.letterGrade,
+        status: item.status,
         updatedAt: item.updatedAt
     })));
     return flattened;
@@ -495,6 +576,9 @@ function doPost(e) {
             return createJsonResponse({ success: true, data: getTopStudentsByGrade(String(payload.grade || ''), Number(payload.limit) || 10) });
         case 'getTranscriptData':
             return createJsonResponse({ success: true, data: getTranscriptData(String(payload.studentId || payload.id || '')) });
+        case 'recalculate':
+            buildResults();
+            return createJsonResponse({ success: true, message: 'Recalculation completed.' });
         default:
             return createJsonResponse({ success: false, error: 'Invalid action type' });
     }

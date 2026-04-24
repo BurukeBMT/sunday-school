@@ -10,6 +10,7 @@ const TeacherDashboard = lazy(() => import('../components/TeacherDashboard'));
 const Scanner = lazy(() => import('../components/Scanner'));
 const ManualAttendance = lazy(() => import('../components/ManualAttendance'));
 const Registration = lazy(() => import('../components/Registration'));
+const StudentRegistration = lazy(() => import('../components/StudentRegistration'));
 const StudentList = lazy(() => import('../components/StudentList'));
 const CourseManagement = lazy(() => import('../components/CourseManagement'));
 const AdminManagement = lazy(() => import('../components/AdminManagement'));
@@ -53,7 +54,7 @@ export const RoleRoutes: React.FC<RoleRoutesProps> = ({ role }) => {
                 <Routes>
                     <Route index element={<SuperAdminDashboard />} />
                     <Route path="dashboard" element={<SuperAdminDashboard />} />
-                    <Route path="users" element={<Registration />} />
+                    <Route path="users" element={<StudentRegistration />} />
                     <Route path="students" element={<StudentList />} />
                     <Route path="courses" element={<CourseManagement />} />
                     <Route path="admins" element={<AdminManagement />} />

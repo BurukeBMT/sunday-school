@@ -10,6 +10,11 @@ export const SuperAdminResults: React.FC = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
+    const getFinalScore = (result: StudentResult) => Number(result.total ?? 0);
+    const getLetterGrade = (score: number) =>
+        score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F';
+    const getStatus = (score: number) => (score >= 60 ? 'Passed' : 'Failed');
+
     useEffect(() => {
         loadAllResults();
     }, []);
@@ -66,15 +71,18 @@ export const SuperAdminResults: React.FC = () => {
         // Create CSV content
         const csvContent = [
             ['Student ID', 'Course', 'Grade', 'Final Score', 'Letter Grade', 'Status'],
-            ...results.map(result => [
-                result.studentId,
-                result.course,
-                result.grade,
-                result.finalScore.toFixed(2),
-                result.letterGrade,
-                result.status
-            ])
-        ].map(row => row.join(',')).join('\n');
+            ...results.map((result) => {
+                const finalScore = getFinalScore(result);
+                return [
+                    result.studentId,
+                    result.course,
+                    result.grade,
+                    finalScore.toFixed(2),
+                    getLetterGrade(finalScore),
+                    getStatus(finalScore)
+                ];
+            })
+        ].map((row) => row.join(',')).join('\n');
 
         // Create and download file
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -89,10 +97,10 @@ export const SuperAdminResults: React.FC = () => {
     const getGradeStats = () => {
         const stats = {
             total: results.length,
-            excellent: results.filter(r => r.letterGrade === 'A').length,
-            good: results.filter(r => r.letterGrade === 'B').length,
-            satisfactory: results.filter(r => r.letterGrade === 'C').length,
-            needsImprovement: results.filter(r => ['D', 'F'].includes(r.letterGrade)).length,
+            excellent: results.filter((r) => getLetterGrade(getFinalScore(r)) === 'A').length,
+            good: results.filter((r) => getLetterGrade(getFinalScore(r)) === 'B').length,
+            satisfactory: results.filter((r) => getLetterGrade(getFinalScore(r)) === 'C').length,
+            needsImprovement: results.filter((r) => ['D', 'F'].includes(getLetterGrade(getFinalScore(r)))).length,
         };
         return stats;
     };
@@ -225,19 +233,19 @@ export const SuperAdminResults: React.FC = () => {
                                         {result.grade}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {result.finalScore.toFixed(2)}%
+                                        {getFinalScore(result).toFixed(2)}%
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${result.letterGrade === 'A' ? 'bg-green-100 text-green-800' :
-                                                result.letterGrade === 'B' ? 'bg-blue-100 text-blue-800' :
-                                                    result.letterGrade === 'C' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-red-100 text-red-800'
+                                            result.letterGrade === 'B' ? 'bg-blue-100 text-blue-800' :
+                                                result.letterGrade === 'C' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
                                             }`}>
-                                            {result.letterGrade}
+                                            {result.letterGrade || getLetterGrade(getFinalScore(result))}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {result.status}
+                                        {result.status || getStatus(getFinalScore(result))}
                                     </td>
                                 </tr>
                             ))}

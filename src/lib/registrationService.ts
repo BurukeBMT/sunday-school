@@ -1,10 +1,5 @@
-import {
-    createUserWithEmailAndPassword,
-    updateProfile,
-    signOut
-} from 'firebase/auth';
 import { ref, get, set, update, query, orderByChild, equalTo } from 'firebase/database';
-import { auth, database } from '../firebase';
+import { database } from '../firebase';
 import { Student, Parent } from '../types';
 import { generateStudentId, generateParentId, generateSecurePassword } from './idGenerator';
 import { PDFGenerator } from './PDFGenerator';
@@ -42,13 +37,6 @@ export class RegistrationService {
             const studentPassword = generateSecurePassword();
             const studentEmail = `${studentId}@school.local`;
 
-            const studentCredential = await createUserWithEmailAndPassword(auth, studentEmail, studentPassword);
-            const studentUid = studentCredential.user.uid;
-
-            await updateProfile(studentCredential.user, {
-                displayName: fullName
-            });
-
             let parent = await this.findParentByContact(parentPhone, parentEmail);
             if (!parent) {
                 parent = await this.createParent(parentPhone, parentEmail);
@@ -61,7 +49,6 @@ export class RegistrationService {
 
             const student: Student = {
                 id: studentId,
-                uid: studentUid,
                 fullName,
                 phone: parentPhone,
                 email: parentEmail,
@@ -106,8 +93,6 @@ export class RegistrationService {
 
             const studentQR = await QRGenerator.generateStudentQR(studentId, qrToken);
             const parentQR = await QRGenerator.generateParentQR(parent.parentId, parent.passwordTemp || studentId);
-
-            await signOut(auth);
 
             return {
                 student,
@@ -170,16 +155,9 @@ export class RegistrationService {
             const parentPassword = generateSecurePassword();
             const parentEmail = email || `${phone.replace('+', '')}@parent.local`;
 
-            const parentCredential = await createUserWithEmailAndPassword(auth, parentEmail, parentPassword);
-            const parentUid = parentCredential.user.uid;
-
-            await updateProfile(parentCredential.user, {
-                displayName: `Parent of ${phone}`
-            });
-
             const parent: Parent = {
                 parentId,
-                uid: parentUid,
+                uid: '',
                 username: phone,
                 passwordTemp: parentPassword,
                 linkedStudents: [],
