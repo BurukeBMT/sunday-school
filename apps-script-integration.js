@@ -174,23 +174,46 @@ const sendFirebaseRecord = (endpoint, data, id) => {
         ? `${baseUrl}/${cleanEndpoint}/${encodeURIComponent(id)}.json${CONFIG.FIREBASE_AUTH ? `?auth=${CONFIG.FIREBASE_AUTH}` : ''}`
         : `${baseUrl}/${cleanEndpoint}.json${CONFIG.FIREBASE_AUTH ? `?auth=${CONFIG.FIREBASE_AUTH}` : ''}`;
 
-    const options = {
-        method: id ? 'put' : 'post',
-        contentType: 'application/json',
-        payload: JSON.stringify(data),
-        muteHttpExceptions: true
-    };
+    const maxRetries = 3;
+    let lastError = null;
 
-    try {
-        const response = UrlFetchApp.fetch(url, options);
-        const code = response.getResponseCode();
-        if (code >= 200 && code < 300) {
-            return JSON.parse(response.getContentText());
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const options = {
+                method: id ? 'put' : 'post',
+                contentType: 'application/json',
+                payload: JSON.stringify(data),
+                muteHttpExceptions: true
+            };
+
+            const response = UrlFetchApp.fetch(url, options);
+            const code = response.getResponseCode();
+            if (code >= 200 && code < 300) {
+                return JSON.parse(response.getContentText());
+            }
+            lastError = `HTTP ${code}: ${response.getContentText()}`;
+        } catch (err) {
+            lastError = String(err);
         }
-        console.error('Firebase mirror failed:', code, response.getContentText());
-    } catch (err) {
-        console.error('Firebase mirror failed:', err);
+
+        // Exponential backoff: 1s, 2s, 4s
+        if (attempt < maxRetries) {
+            Utilities.sleep(Math.pow(2, attempt - 1) * 1000);
+        }
     }
+
+    // Log failure to SyncFailures sheet
+    const failureRow = {
+        endpoint: cleanEndpoint,
+        id: id || '',
+        data: JSON.stringify(data),
+        error: lastError,
+        timestamp: new Date().toISOString(),
+        attempts: maxRetries
+    };
+    appendSheetRow('SyncFailures', failureRow);
+
+    console.error('Firebase sync failed after retries:', lastError);
     return null;
 };
 
@@ -259,6 +282,26 @@ const hasDuplicateAttendance = (studentId, course, date) => {
     return getSheetRows(CONFIG.SHEETS.attendance).some((row) => {
         return String(row.studentid || row.studentId || '').trim() === normalizedStudentId &&
             String(row.course || '').trim() === normalizedCourse &&
+            String(row.date || '').trim() === normalizedDate;
+    });
+};
+
+const hasDuplicateMarks = (studentId, course, assessmentType, score, date) => {
+    const normalizedStudentId = String(studentId || '').trim();
+    const normalizedCourse = String(course || '').trim();
+    const normalizedType = String(assessmentType || '').trim();
+    const normalizedScore = Number(score || 0);
+    const normalizedDate = String(date || '').trim();
+
+    if (!normalizedStudentId || !normalizedCourse || !normalizedType) {
+        return false;
+    }
+
+    return getSheetRows(CONFIG.SHEETS.marks).some((row) => {
+        return String(row.studentid || row.studentId || '').trim() === normalizedStudentId &&
+            String(row.course || '').trim() === normalizedCourse &&
+            String(row.assessmenttype || row.assessmentType || '').trim() === normalizedType &&
+            Number(row.score || 0) === normalizedScore &&
             String(row.date || '').trim() === normalizedDate;
     });
 };
@@ -361,6 +404,11 @@ const processMarks = (payload) => {
             return;
         }
 
+        if (hasDuplicateMarks(studentId, course, assessmentType, score, date)) {
+            errors.push(`Duplicate mark entry at index ${index}. Mark already exists for student ${studentId} in ${course} for ${assessmentType} on ${date}.`);
+            return;
+        }
+
         validMarks.push({
             studentId,
             course,
@@ -427,6 +475,21 @@ const buildResults = () => {
     const marks = getSheetRows(CONFIG.SHEETS.marks);
     const rules = getSheetRows(CONFIG.SHEETS.gradingRules);
 
+    // Deduplicate marks using unique key: studentId + course + assessmentType + score + date
+    const uniqueMarks = {};
+    marks.forEach((mark) => {
+        const studentId = String(mark.studentid || mark.studentId || '').trim();
+        const course = String(mark.course || '').trim();
+        const assessmentType = String(mark.assessmenttype || mark.assessmentType || '').trim();
+        const score = Number(mark.score || 0);
+        const date = String(mark.date || '').trim();
+        const key = `${studentId}::${course}::${assessmentType}::${score}::${date}`;
+        if (!uniqueMarks[key]) {
+            uniqueMarks[key] = mark;
+        }
+    });
+    const deduplicatedMarks = Object.values(uniqueMarks);
+
     const ruleWeightByCourse = {};
     rules.forEach((rule) => {
         const course = String(rule.course || '').trim();
@@ -436,7 +499,7 @@ const buildResults = () => {
     });
 
     const groupedMarks = {};
-    marks.forEach((mark) => {
+    deduplicatedMarks.forEach((mark) => {
         const studentId = String(mark.studentid || mark.studentId || '').trim();
         const course = String(mark.course || '').trim();
         const assessmentType = String(mark.assessmenttype || mark.assessmentType || '').trim();
