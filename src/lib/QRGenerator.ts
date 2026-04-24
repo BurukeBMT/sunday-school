@@ -1,11 +1,11 @@
 import QRCode from 'qrcode';
 
 export class QRGenerator {
-    static async generateLoginQR(username: string, password: string, userType: 'student' | 'parent'): Promise<string> {
-        const loginUrl = `${window.location.origin}/login?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&type=${userType}`;
+    static async generateAttendanceQR(id: string, token: string): Promise<string> {
+        const payload = JSON.stringify({ id, token });
 
         try {
-            const qrCodeDataURL = await QRCode.toDataURL(loginUrl, {
+            return await QRCode.toDataURL(payload, {
                 width: 256,
                 margin: 2,
                 color: {
@@ -14,20 +14,18 @@ export class QRGenerator {
                 },
                 errorCorrectionLevel: 'M'
             });
-
-            return qrCodeDataURL;
         } catch (error) {
-            console.error('Error generating QR code:', error);
+            console.error('Error generating attendance QR code:', error);
             throw new Error('Failed to generate QR code');
         }
     }
 
-    static async generateStudentQR(studentId: string, username: string, password: string): Promise<string> {
-        return this.generateLoginQR(username, password, 'student');
+    static async generateStudentQR(studentId: string, qrToken: string): Promise<string> {
+        return this.generateAttendanceQR(studentId, qrToken);
     }
 
-    static async generateParentQR(parentId: string, username: string, password: string): Promise<string> {
-        return this.generateLoginQR(username, password, 'parent');
+    static async generateParentQR(parentId: string, parentToken: string): Promise<string> {
+        return this.generateAttendanceQR(parentId, parentToken);
     }
 
     static downloadQRImage(qrDataURL: string, filename: string): void {

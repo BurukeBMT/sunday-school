@@ -34,15 +34,12 @@ export interface SheetsApiResponse {
 
 const handleResponse = async <T = any>(response: Response): Promise<T> => {
     const data = await response.json();
-
     if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
     }
-
     if (!data.success) {
         throw new Error(data.error || 'Google Sheets API request failed');
     }
-
     return data.data as T;
 };
 
@@ -99,9 +96,6 @@ export const fetchResults = async (): Promise<StudentResult[]> => {
     }
 };
 
-/**
- * Fetch results for a specific student
- */
 export const fetchStudentResults = async (studentId: string): Promise<StudentResult[]> => {
     try {
         const allResults = await fetchResults();
@@ -109,6 +103,44 @@ export const fetchStudentResults = async (studentId: string): Promise<StudentRes
     } catch (error) {
         console.error('Error fetching student results:', error);
         throw error;
+    }
+};
+
+export const registerStudent = async (student: {
+    studentId: string;
+    fullName: string;
+    course: string;
+    grade: string;
+    qrToken: string;
+    date: string;
+    time: string;
+}): Promise<SheetsApiResponse> => {
+    try {
+        const response = await fetch(SHEETS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'registerStudent',
+                payload: student
+            })
+        });
+
+        const data: SheetsApiResponse = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        if (!data.success) {
+            throw new Error(data.error || 'Google Sheets registration request failed');
+        }
+        return data;
+    } catch (error) {
+        console.error('Error registering student with Google Sheets:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
     }
 };
 
@@ -131,11 +163,9 @@ export const sendScan = async (scanPayload: {
         });
 
         const data: SheetsApiResponse = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
         }
-
         return data;
     } catch (error) {
         console.error('Error sending scan payload to Google Sheets:', error);
@@ -160,11 +190,9 @@ export const sendMarks = async (marks: MarkEntry[]): Promise<SheetsApiResponse> 
         });
 
         const data: SheetsApiResponse = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
         }
-
         return data;
     } catch (error) {
         console.error('Error sending marks to Google Sheets:', error);
@@ -189,11 +217,9 @@ export const sendGradingRules = async (rules: GradingRule[]): Promise<SheetsApiR
         });
 
         const data: SheetsApiResponse = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
         }
-
         return data;
     } catch (error) {
         console.error('Error sending grading rules to Google Sheets:', error);
@@ -229,15 +255,12 @@ export const getGradeRanking = async (grade: string): Promise<GradeRanking[]> =>
         });
 
         const data: SheetsApiResponse = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
         }
-
         if (!data.success) {
             throw new Error(data.error || 'Failed to fetch grade ranking');
         }
-
         return data.data || [];
     } catch (error) {
         console.error('Error fetching grade ranking:', error);
@@ -259,51 +282,15 @@ export const getTopStudentsByGrade = async (grade: string, limit = 10): Promise<
         });
 
         const data: SheetsApiResponse = await response.json();
-
         if (!response.ok) {
             throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
         }
-
         if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch top students');
+            throw new Error(data.error || 'Failed to fetch top students by grade');
         }
-
         return data.data || [];
     } catch (error) {
         console.error('Error fetching top students by grade:', error);
-        throw error;
-    }
-};
-
-/**
- * Get transcript data for a student
- */
-export const getTranscriptData = async (studentId: string): Promise<TranscriptData> => {
-    try {
-        const response = await fetch(SHEETS_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                type: 'getTranscriptData',
-                payload: { studentId }
-            })
-        });
-
-        const data: SheetsApiResponse = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch transcript data');
-        }
-
-        return data.data;
-    } catch (error) {
-        console.error('Error fetching transcript data:', error);
         throw error;
     }
 };
