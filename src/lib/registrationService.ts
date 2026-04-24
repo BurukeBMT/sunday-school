@@ -77,7 +77,7 @@ export class RegistrationService {
             await set(ref(database, `students/${studentId}`), student);
             await this.linkStudentToParent(parent.parentId, studentId);
 
-            await registerStudentSheet({
+            const sheetResult = await registerStudentSheet({
                 studentId,
                 fullName,
                 course: grade,
@@ -86,6 +86,10 @@ export class RegistrationService {
                 date,
                 time
             });
+
+            if (!sheetResult.success) {
+                throw new Error(sheetResult.error || 'Google Sheets registration failed.');
+            }
 
             const studentPDF = await PDFGenerator.generateStudentPDF(student, {
                 username: studentId,

@@ -294,3 +294,30 @@ export const getTopStudentsByGrade = async (grade: string, limit = 10): Promise<
         throw error;
     }
 };
+
+export const getTranscriptData = async (studentId: string): Promise<TranscriptData> => {
+    try {
+        const response = await fetch(SHEETS_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: 'getTranscriptData',
+                payload: { studentId }
+            })
+        });
+
+        const data: SheetsApiResponse = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to fetch transcript data');
+        }
+        return data.data;
+    } catch (error) {
+        console.error('Error fetching transcript data:', error);
+        throw error;
+    }
+};
