@@ -7,13 +7,22 @@ import { auth, database } from '../firebase';
 import { Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const ResetPassword: React.FC = () => {
-    const { user, profile } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+
+    // Show loading state while auth is initializing
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5A5A40]"></div>
+            </div>
+        );
+    }
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();

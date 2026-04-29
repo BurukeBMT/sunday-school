@@ -74,13 +74,16 @@ interface PermissionsContextType {
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
 
 export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { profile } = useAuth();
+    const { profile, loading: authLoading } = useAuth();
     const [customPermissions, setCustomPermissions] = useState<{ [userId: string]: Permission[] }>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadCustomPermissions();
-    }, []);
+        // Only load custom permissions after auth has finished loading
+        if (!authLoading) {
+            loadCustomPermissions();
+        }
+    }, [authLoading]);
 
     const loadCustomPermissions = async () => {
         try {
@@ -102,7 +105,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const getUserPermissions = (): Permission[] => {
-        if (!profile) return [];
+        if (!profile || authLoading) return [];
 
         // Superadmin always has all permissions
         if (profile.role === 'superadmin') {
@@ -149,8 +152,17 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
         hasAllPermissions,
         getUserPermissions,
         updateUserPermissions,
-        loading
+        loading: loading || authLoading
     };
+
+    // Show loading state while permissions are being initialized
+    if (loading || authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5A5A40]"></div>
+            </div>
+        );
+    }
 
     return (
         <PermissionsContext.Provider value={value}>

@@ -18,10 +18,19 @@ import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 
 export const LandingPage: React.FC = () => {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('hero');
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
+
+  // Show loading state while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5A5A40]"></div>
+      </div>
+    );
+  }
 
   // Stats counters
   const [stats, setStats] = useState({ students: 0, departments: 0, years: 0 });
