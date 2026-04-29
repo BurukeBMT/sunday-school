@@ -88,9 +88,14 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
             const snapshot = await get(permissionsRef);
             if (snapshot.exists()) {
                 setCustomPermissions(snapshot.val());
+            } else {
+                // Initialize empty permissions if path doesn't exist
+                setCustomPermissions({});
             }
         } catch (error) {
-            console.error('Error loading custom permissions:', error);
+            console.warn('Could not load custom permissions, using defaults:', error);
+            // Continue with empty custom permissions
+            setCustomPermissions({});
         } finally {
             setLoading(false);
         }
