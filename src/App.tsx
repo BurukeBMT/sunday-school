@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -12,6 +12,7 @@ const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Show loading state while auth is initializing
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
@@ -21,7 +22,15 @@ const AppContent: React.FC = () => {
   }
 
   if (!user) {
-    return <AppRoutes />;
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
+          <Loader2 className="animate-spin text-[#5A5A40]" size={48} />
+        </div>
+      }>
+        <AppRoutes />
+      </Suspense>
+    );
   }
 
   return (
@@ -69,7 +78,13 @@ const AppContent: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto">
-          <AppRoutes />
+          <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-[#f5f5f0]">
+              <Loader2 className="animate-spin text-[#5A5A40]" size={48} />
+            </div>
+          }>
+            <AppRoutes />
+          </Suspense>
         </div>
       </main>
 

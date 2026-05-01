@@ -22,15 +22,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (!user) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
+    // Ensure Firebase auth is initialized
+    if (!auth) {
+      console.error('Firebase auth not initialized');
+      setLoading(false);
+      return;
+    }
 
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
+        setUser(user);
+        if (!user) {
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
         // Special superadmin check - if this is the superadmin email, always ensure they have access
         const superAdminEmail = 'burukmaedot16@gmail.com';
         const isSuperAdminEmail = user.email?.trim().toLowerCase() === superAdminEmail;
@@ -38,9 +45,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isSuperAdminEmail) {
           const superAdminProfile: UserProfile = {
             uid: user.uid,
-            email: user.email!.trim().toLowerCase(),
+            email: user.email?.trim().toLowerCase() || '',
             role: 'superadmin',
-            name: user.displayName || '',
+            name: user.displayName || user.email || '',
             assignedCourses: []
           };
 
@@ -61,12 +68,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const snapshot = await get(userRef);
 
         if (snapshot.exists()) {
-          const profile = snapshot.val() as UserProfile;
-          const normalizedRole = profile.role === 'super_admin' ? 'superadmin' : profile.role;
+          const profileData = snapshot.val() as UserProfile;
+          const normalizedRole = profileData.role === 'super_admin' ? 'superadmin' : profileData.role;
 
-          if (normalizedRole === 'admin' || normalizedRole === 'superadmin' || normalizedRole === 'teacher') {
+          if (normalizedRole === 'admin' || normalizedRole === 'superadmin' || normalizedRole === 'teacher' || normalizedRole === 'student' || normalizedRole === 'parent') {
             setProfile({
-              ...profile,
+              ...profileData,
               role: normalizedRole as UserProfile['role'],
             });
           } else {
@@ -96,7 +103,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           if (querySnap.exists()) {
             const users = querySnap.val();
-            const userKey = Object.keys(users).find(key => users[key].role === 'admin' || users[key].role === 'teacher');
+            const userKey = Object.keys(users).find(key => users[key].role === 'admin' || users[key].role === 'teacher' || users[key].role === 'student' || users[key].role === 'parent');
             if (userKey) {
               const userData = users[userKey] as UserProfile;
 
@@ -130,23 +137,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
-    await signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
   };
 
   const loginWithEmailPassword = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+    try {
+      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
+    } catch (error) {
+      console.error('Email/password login error:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+      setUser(null);
+      setProfile(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    profile,
+    loading,
+    loginWithGoogle,
+    loginWithEmailPassword,
+    logout
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, loginWithGoogle, loginWithEmailPassword, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -157,5 +190,10 @@ export const useAuth = () => {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  // Ensure we never return undefined values during loading
+  return {
+    ...context,
+    user: context.user || null,
+    profile: context.profile || null,
+  };
 };

@@ -105,7 +105,7 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const getUserPermissions = (): Permission[] => {
-        if (!profile || authLoading) return [];
+        if (authLoading || !profile) return [];
 
         // Superadmin always has all permissions
         if (profile.role === 'superadmin') {
@@ -122,15 +122,18 @@ export const PermissionsProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     const hasPermission = (permission: Permission): boolean => {
+        if (authLoading || !profile) return false;
         const userPermissions = getUserPermissions();
         return userPermissions.includes(permission);
     };
 
     const hasAnyPermission = (permissions: Permission[]): boolean => {
+        if (authLoading || !profile) return false;
         return permissions.some(permission => hasPermission(permission));
     };
 
     const hasAllPermissions = (permissions: Permission[]): boolean => {
+        if (authLoading || !profile) return false;
         return permissions.every(permission => hasPermission(permission));
     };
 
