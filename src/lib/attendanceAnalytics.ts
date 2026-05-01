@@ -199,7 +199,7 @@ export const getRealtimeAttendanceAnalytics = (
     });
 
     // Attendance logs listener (filtered for today)
-    const logsRef = ref(database, 'attendance_logs');
+    const logsRef = ref(database, 'attendance');
     const unsubLogs = onValue(logsRef, (snap) => {
         if (snap.exists()) {
             const allLogs = Object.values(snap.val()) as AttendanceLog[];
@@ -244,7 +244,7 @@ export const getAttendanceAnalyticsForDate = async (date: string): Promise<Atten
         get(ref(database, 'students')),
         get(ref(database, 'courses')),
         get(ref(database, 'teachers')),
-        get(ref(database, 'attendance_logs'))
+        get(ref(database, 'attendance'))
     ]);
 
     const students: Student[] = studentsSnap.exists() ? Object.values(studentsSnap.val()) : [];

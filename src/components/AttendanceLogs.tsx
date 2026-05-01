@@ -66,7 +66,7 @@ export const AttendanceLogs: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    const logsRef = ref(database, 'attendance_logs');
+    const logsRef = ref(database, 'attendance');
     let q: DatabaseReference | Query = logsRef;
 
     if (dateFilter) {

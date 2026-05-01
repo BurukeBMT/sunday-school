@@ -4,7 +4,6 @@ import { Student, Parent } from '../types';
 import { generateStudentId, generateParentId, generateSecurePassword } from './idGenerator';
 import { PDFGenerator } from './PDFGenerator';
 import { QRGenerator } from './QRGenerator';
-import { registerStudent as registerStudentSheet } from './sheetsApi';
 
 export interface RegistrationResult {
     student: Student;
@@ -63,20 +62,6 @@ export class RegistrationService {
 
             await set(ref(database, `students/${studentId}`), student);
             await this.linkStudentToParent(parent.parentId, studentId);
-
-            const sheetResult = await registerStudentSheet({
-                studentId,
-                fullName,
-                course: grade,
-                grade,
-                qrToken,
-                date,
-                time
-            });
-
-            if (!sheetResult.success) {
-                throw new Error(sheetResult.error || 'Google Sheets registration failed.');
-            }
 
             const studentPDF = await PDFGenerator.generateStudentPDF(student, {
                 username: studentId,

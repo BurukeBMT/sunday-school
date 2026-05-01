@@ -160,7 +160,7 @@ export const ManualAttendance: React.FC = () => {
             }
 
             // Check for duplicate attendance
-            const logsRef = ref(database, 'attendance_logs');
+            const logsRef = ref(database, 'attendance');
             const duplicateQuery = query(
                 logsRef,
                 orderByChild('studentId'),
@@ -188,7 +188,7 @@ export const ManualAttendance: React.FC = () => {
             }
 
             // Record attendance
-            await push(ref(database, 'attendance_logs'), {
+            await push(ref(database, 'attendance'), {
                 studentId: student.id,
                 studentName: student.fullName,
                 courseId: selectedCourse,

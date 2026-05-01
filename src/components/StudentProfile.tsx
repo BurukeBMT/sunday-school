@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { auth, database } from '../firebase';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
-import { fetchStudentResults, getTranscriptData } from '../lib/sheetsApi';
+import { fetchStudentResults, getTranscriptData } from '../lib/firebaseService';
 import { generateTranscriptPDF } from '../lib/generateTranscriptPDF';
 import { checkResultsPublished } from '../lib/resultsControl';
 import { Student, StudentResult, AttendanceLog, TranscriptData } from '../types';
@@ -114,7 +114,7 @@ export const StudentProfile: React.FC = () => {
     const loadAttendanceStats = async (studentId: string) => {
         try {
             // Get all attendance logs for this student
-            const attendanceRef = ref(database, 'attendance_logs');
+            const attendanceRef = ref(database, 'attendance');
             const attendanceQuery = query(attendanceRef, orderByChild('studentId'), equalTo(studentId));
             const attendanceSnapshot = await get(attendanceQuery);
 

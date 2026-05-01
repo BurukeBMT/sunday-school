@@ -193,7 +193,7 @@ export class AbsenceAlertService {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const logsRef = ref(database, 'attendance_logs');
+        const logsRef = ref(database, 'attendance');
         const studentLogsQuery = query(logsRef, orderByChild('studentId'), equalTo(studentId));
         const snapshot = await get(studentLogsQuery);
 
@@ -407,7 +407,7 @@ export class BackupService {
         // Get record counts
         const [studentsCount, attendanceCount, coursesCount, usersCount, parentsCount] = await Promise.all([
             this.getCollectionCount('students'),
-            this.getCollectionCount('attendance_logs'),
+            this.getCollectionCount('attendance'),
             this.getCollectionCount('courses'),
             this.getCollectionCount('users'),
             this.getCollectionCount('parents'),
@@ -421,7 +421,7 @@ export class BackupService {
             size: 0, // Will be calculated after export
             recordCount: {
                 students: studentsCount,
-                attendance_logs: attendanceCount,
+                attendance: attendanceCount,
                 courses: coursesCount,
                 users: usersCount,
                 parents: parentsCount,

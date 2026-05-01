@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { ASSESSMENT_TYPES, Course, GradingRule } from '../types';
-import { fetchGradingRules, sendGradingRules } from '../lib/sheetsApi';
+import { fetchGradingRules, saveGradingRules } from '../lib/firebaseService';
 
 interface GradingRulesFormProps {
     assignedCourses: Course[];
@@ -87,12 +87,8 @@ export const GradingRulesForm: React.FC<GradingRulesFormProps> = ({ assignedCour
         setSuccess('');
 
         try {
-            const result = await sendGradingRules(rules);
-            if (result.success) {
-                setSuccess('Grading rules saved successfully!');
-            } else {
-                setError(result.error || 'Failed to save grading rules');
-            }
+            await saveGradingRules(rules);
+            setSuccess('Grading rules saved successfully!');
         } catch (err) {
             setError('Failed to save grading rules');
             console.error('Error saving grading rules:', err);
@@ -210,8 +206,8 @@ export const GradingRulesForm: React.FC<GradingRulesFormProps> = ({ assignedCour
                     {/* Total Weight Display */}
                     <div className="mb-6">
                         <div className={`p-4 rounded-lg flex items-center ${isValid
-                                ? 'bg-green-50 border border-green-200'
-                                : 'bg-yellow-50 border border-yellow-200'
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-yellow-50 border border-yellow-200'
                             }`}>
                             {isValid ? (
                                 <CheckCircle className="h-5 w-5 text-green-600 mr-3" />

@@ -159,11 +159,14 @@ export type Mark = MarkEntry;
 
 export interface StudentResult {
   studentId: string;
+  studentName?: string;
   course?: string;
   grade?: string;
   total: number;
   average?: number;
   rank: number;
+  letterGrade?: string;
+  status?: string;
 }
 
 // New types for advanced academic features
@@ -339,7 +342,7 @@ export interface BackupMetadata {
   size: number; // bytes
   recordCount: {
     students: number;
-    attendance_logs: number;
+    attendance: number;
     courses: number;
     users: number;
     parents: number;

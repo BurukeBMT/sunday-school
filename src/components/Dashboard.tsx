@@ -62,7 +62,7 @@ export const Dashboard: React.FC = () => {
     });
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const logsRef = ref(database, 'attendance_logs');
+    const logsRef = ref(database, 'attendance');
     const unsubLogs = onValue(logsRef, (snap) => {
       if (snap.exists()) {
         const logs = snap.val();

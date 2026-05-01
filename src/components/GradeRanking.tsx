@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Users, AlertCircle } from 'lucide-react';
-import { getGradeRanking } from '../lib/sheetsApi';
+import { getGradeRanking } from '../lib/firebaseService';
 import { GradeRanking as GradeRankingType, GRADES } from '../types';
 
 export const GradeRanking: React.FC = () => {

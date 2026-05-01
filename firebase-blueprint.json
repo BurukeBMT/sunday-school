@@ -5,56 +5,138 @@
       "description": "System admin or super admin",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "role": { "type": "string", "enum": ["super_admin", "admin"] },
-        "name": { "type": "string" },
-        "assignedCourses": { "type": "array", "items": { "type": "string" } }
+        "uid": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "super_admin",
+            "admin"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "assignedCourses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       },
-      "required": ["uid", "email", "role"]
+      "required": [
+        "uid",
+        "email",
+        "role"
+      ]
     },
     "Student": {
       "title": "Student",
       "description": "Sunday School student",
       "type": "object",
       "properties": {
-        "id": { "type": "string", "description": "Custom ID like ፍ/ሃ/ሰ/ት/00001" },
-        "fullName": { "type": "string" },
-        "phone": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "department": { "type": "string" },
-        "qrToken": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": {
+          "type": "string",
+          "description": "Custom ID like ፍ/ሃ/ሰ/ት/00001"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "department": {
+          "type": "string"
+        },
+        "qrToken": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       },
-      "required": ["id", "fullName", "phone", "department", "qrToken"]
+      "required": [
+        "id",
+        "fullName",
+        "phone",
+        "department",
+        "qrToken"
+      ]
     },
     "Course": {
       "title": "Course",
       "description": "Sunday School course",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "department": { "type": "string" },
-        "schedule": { "type": "string" },
-        "adminIds": { "type": "array", "items": { "type": "string" } }
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "schedule": {
+          "type": "string"
+        },
+        "adminIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       },
-      "required": ["id", "name", "department"]
+      "required": [
+        "id",
+        "name",
+        "department"
+      ]
     },
     "AttendanceLog": {
       "title": "AttendanceLog",
       "description": "Record of student attendance",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "studentId": { "type": "string" },
-        "courseId": { "type": "string" },
-        "department": { "type": "string" },
-        "date": { "type": "string" },
-        "time": { "type": "string" },
-        "adminId": { "type": "string" }
+        "id": {
+          "type": "string"
+        },
+        "studentId": {
+          "type": "string"
+        },
+        "courseId": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        },
+        "adminId": {
+          "type": "string"
+        }
       },
-      "required": ["studentId", "courseId", "date", "time", "adminId"]
+      "required": [
+        "studentId",
+        "courseId",
+        "date",
+        "time",
+        "adminId"
+      ]
     }
   },
   "firestore": {
@@ -70,7 +152,7 @@
       "schema": "Course",
       "description": "Course definitions"
     },
-    "/attendance_logs/{logId}": {
+    "/attendance/{logId}": {
       "schema": "AttendanceLog",
       "description": "Attendance logs"
     }

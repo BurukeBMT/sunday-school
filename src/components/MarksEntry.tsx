@@ -3,7 +3,7 @@ import { Save, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { auth, database } from '../firebase';
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import { Course, Student, MarkEntry as MarkEntryType, ASSESSMENT_TYPES } from '../types';
-import { sendMarks } from '../lib/sheetsApi';
+import { saveMarks } from '../lib/firebaseService';
 
 interface MarksEntryProps {
     assignedCourses: Course[];
@@ -82,7 +82,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
         }));
     };
 
-    const saveMarks = async () => {
+    const handleSaveMarks = async () => {
         if (!selectedCourse || !selectedAssessmentType) {
             setError('Please select a course and assessment type');
             return;
@@ -98,17 +98,12 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
                 course: selectedCourse,
                 assessmentType: selectedAssessmentType,
                 score: marks[student.id]?.[selectedAssessmentType] || 0,
-                maxScore: 100, // Assuming percentage-based scoring
+                maxScore: 100,
                 date: new Date().toISOString()
             }));
 
-            const result = await sendMarks(marksToSend);
-
-            if (result.success) {
-                setSuccess('Marks saved successfully!');
-            } else {
-                throw new Error(result.error || 'Failed to save marks');
-            }
+            await saveMarks(marksToSend);
+            setSuccess('Marks saved successfully!');
         } catch (err) {
             setError('Failed to save marks');
             console.error('Error saving marks:', err);
@@ -161,7 +156,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
                 </div>
 
                 <button
-                    onClick={saveMarks}
+                    onClick={handleSaveMarks}
                     disabled={saving || !selectedCourse || !selectedAssessmentType}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >

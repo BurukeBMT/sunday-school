@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Award, Crown, RefreshCw, AlertCircle } from 'lucide-react';
-import { getTopStudentsByGrade } from '../lib/sheetsApi';
+import { getTopStudentsByGrade } from '../lib/firebaseService';
 import { LeaderboardEntry, GRADES } from '../types';
 
 interface LeaderboardCardProps {

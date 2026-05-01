@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, TrendingUp, BookOpen, Award, AlertCircle, Download, FileText, Lock, User } from 'lucide-react';
 import { auth, database } from '../firebase';
 import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
-import { fetchStudentResults } from '../lib/sheetsApi';
+import { fetchStudentResults } from '../lib/firebaseService';
 import { checkResultsPublished } from '../lib/resultsControl';
 import { generateTranscriptPDF } from '../lib/generateTranscriptPDF';
 import { StudentResult, Student } from '../types';

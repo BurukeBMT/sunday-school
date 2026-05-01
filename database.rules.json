@@ -63,7 +63,7 @@
         root.child('users').child(auth.uid).child('role').val() === 'super_admin'
       )"
 },
-"attendance_logs": {
+"attendance": {
   ".read": "auth != null",
   ".write": false,
   ".indexOn": [
@@ -237,8 +237,7 @@
         root.child('users').child(auth.uid).child('role').val() === 'admin' ||
         root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
         root.child('users').child(auth.uid).child('role').val() === 'super_admin'
-      )","$userId": {
-  ".read": "auth != null && (auth.uid === $userId || 
+      )","$userId": {".read": "auth != null && (auth.uid === $userId || 
           root.child('users').child(auth.uid).child('role').val() === 'admin' ||
           root.child('users').child(auth.uid).child('role').val() === 'superadmin' ||
           root.child('users').child(auth.uid).child('role').val() === 'super_admin')",".write": "auth != null && (auth.uid === $userId || 

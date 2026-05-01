@@ -303,7 +303,7 @@ export const BackupRestorePanel: React.FC = () => {
                                         </div>
                                         <div>
                                             <span className="text-sm text-gray-600">Attendance:</span>
-                                            <div className="font-medium">{backup.recordCount.attendance_logs}</div>
+                                            <div className="font-medium">{backup.recordCount.attendance}</div>
                                         </div>
                                         <div>
                                             <span className="text-sm text-gray-600">Courses:</span>

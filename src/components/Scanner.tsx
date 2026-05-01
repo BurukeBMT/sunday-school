@@ -17,7 +17,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { Course } from '../types';
 import { DEPARTMENTS } from '../types';
 import { format } from 'date-fns';
-import { sendScan } from '../lib/sheetsApi';
+import { recordAttendance } from '../lib/firebaseService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -267,22 +267,22 @@ export const Scanner: React.FC = () => {
         throw new Error('Invalid QR code format');
       }
 
-      const response = await sendScan({
-        id,
+      const response = await recordAttendance({
+        studentId: id,
         token,
-        course: selectedCourse,
+        courseId: selectedCourse,
         markedBy: profile?.uid || null
       });
 
       if (!response.success) {
-        setResult({ success: false, message: response.error || t.invalidQrCode });
+        setResult({ success: false, message: response.message || t.invalidQrCode });
         return;
       }
 
       setResult({
         success: true,
         message: response.message || t.attendanceRecorded,
-        studentName: response.data?.fullName || response.data?.studentName || undefined
+        studentName: response.data?.fullName
       });
 
       setTimeout(() => {

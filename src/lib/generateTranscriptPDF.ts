@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { getTranscriptData } from '../lib/sheetsApi';
+import { getTranscriptData } from '../lib/firebaseService';
 import { TranscriptData } from '../types';
 
 export const generateTranscriptPDF = async (studentId: string): Promise<void> => {

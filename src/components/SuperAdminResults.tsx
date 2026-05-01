@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw, Download, AlertCircle, CheckCircle, Users, BookOpen } from 'lucide-react';
-import { fetchResults, SHEETS_API_URL } from '../lib/sheetsApi';
+import { fetchResults } from '../lib/firebaseService';
+import { generateResultsForGrade } from '../lib/gradingUtils';
 import { StudentResult } from '../types';
 
 export const SuperAdminResults: React.FC = () => {
     const [results, setResults] = useState<StudentResult[]>([]);
     const [loading, setLoading] = useState(true);
     const [recalculating, setRecalculating] = useState(false);
+    const [selectedGrade, setSelectedGrade] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
@@ -39,26 +41,15 @@ export const SuperAdminResults: React.FC = () => {
         setSuccess('');
 
         try {
-            // This would trigger the Google Apps Script to recalculate all grades
-            const response = await fetch(SHEETS_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    type: 'recalculate'
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setSuccess('Recalculation completed successfully');
-                // Reload results after recalculation
-                await loadAllResults();
+            const grades = Array.from(new Set(results.map((r) => r.grade))).filter((grade): grade is string => Boolean(grade));
+            if (selectedGrade) {
+                await generateResultsForGrade(selectedGrade);
             } else {
-                throw new Error(data.error || 'Recalculation failed');
+                await Promise.all(grades.map((grade) => generateResultsForGrade(grade)));
             }
+            setSuccess('Recalculation completed successfully');
+            // Reload results after recalculation
+            await loadAllResults();
         } catch (err) {
             setError('Failed to trigger recalculation');
             console.error('Error triggering recalculation:', err);
@@ -120,21 +111,39 @@ export const SuperAdminResults: React.FC = () => {
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">Student Results Overview</h1>
                 <div className="flex gap-4 mb-6">
-                    <button
-                        onClick={triggerRecalculation}
-                        disabled={recalculating}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${recalculating ? 'animate-spin' : ''}`} />
-                        {recalculating ? 'Recalculating...' : 'Recalculate Grades'}
-                    </button>
-                    <button
-                        onClick={exportResults}
-                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                    >
-                        <Download className="h-4 w-4" />
-                        Export CSV
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Grade</label>
+                            <select
+                                value={selectedGrade}
+                                onChange={(e) => setSelectedGrade(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Grades</option>
+                                {Array.from(new Set(results.map((r) => r.grade))).map((grade) => (
+                                    <option key={grade} value={grade}>
+                                        {grade}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <button
+                            onClick={triggerRecalculation}
+                            disabled={recalculating}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${recalculating ? 'animate-spin' : ''}`} />
+                            {recalculating ? 'Recalculating...' : 'Recalculate Grades'}
+                        </button>
+                        <button
+                            onClick={exportResults}
+                            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                        >
+                            <Download className="h-4 w-4" />
+                            Export CSV
+                        </button>
+                    </div>
                 </div>
 
                 {error && (

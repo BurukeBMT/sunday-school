@@ -27,7 +27,7 @@ export const useRealtimeAttendance = () => {
                 return;
             }
 
-            const attendanceRef = ref(database, 'attendance_logs');
+            const attendanceRef = ref(database, 'attendance');
 
             const handleData = (snapshot: any) => {
                 try {
@@ -107,7 +107,7 @@ export const useAttendanceStats = (selectedDate?: string) => {
             const totalStudents = studentsSnap.exists() ? Object.keys(studentsSnap.val()).length : 0;
 
             // Get today's attendance logs
-            const attendanceRef = ref(database, 'attendance_logs');
+            const attendanceRef = ref(database, 'attendance');
             const attendanceSnap = await get(attendanceRef);
 
             let presentToday = 0;
@@ -175,7 +175,7 @@ export const useCourseAttendanceStats = (selectedDate?: string) => {
             const coursesSnap = await get(coursesRef);
 
             // Get attendance logs for the date
-            const attendanceRef = ref(database, 'attendance_logs');
+            const attendanceRef = ref(database, 'attendance');
             const attendanceSnap = await get(attendanceRef);
 
             const stats: CourseAttendanceStats[] = [];
@@ -242,7 +242,7 @@ export const useLiveAttendanceTable = (limit: number = 50) => {
             }
 
             const attendanceRef = query(
-                ref(database, 'attendance_logs'),
+                ref(database, 'attendance'),
                 orderByChild('createdAt'),
                 limitToLast(limit)
             );
