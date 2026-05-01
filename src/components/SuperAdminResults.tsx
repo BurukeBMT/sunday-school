@@ -41,7 +41,7 @@ export const SuperAdminResults: React.FC = () => {
         setSuccess('');
 
         try {
-            const grades = Array.from(new Set(results.map((r) => r.grade))).filter((grade): grade is string => Boolean(grade));
+            const grades = Array.from(new Set((results || []).map((r) => r.grade))).filter((grade): grade is string => Boolean(grade));
             if (selectedGrade) {
                 await generateResultsForGrade(selectedGrade);
             } else {
@@ -62,7 +62,7 @@ export const SuperAdminResults: React.FC = () => {
         // Create CSV content
         const csvContent = [
             ['Student ID', 'Course', 'Grade', 'Final Score', 'Letter Grade', 'Status'],
-            ...results.map((result) => {
+            ...((results || []).map((result) => {
                 const finalScore = getFinalScore(result);
                 return [
                     result.studentId,
@@ -72,7 +72,7 @@ export const SuperAdminResults: React.FC = () => {
                     getLetterGrade(finalScore),
                     getStatus(finalScore)
                 ];
-            })
+            }))
         ].map((row) => row.join(',')).join('\n');
 
         // Create and download file
@@ -86,12 +86,13 @@ export const SuperAdminResults: React.FC = () => {
     };
 
     const getGradeStats = () => {
+        const safeResults = results || [];
         const stats = {
-            total: results.length,
-            excellent: results.filter((r) => getLetterGrade(getFinalScore(r)) === 'A').length,
-            good: results.filter((r) => getLetterGrade(getFinalScore(r)) === 'B').length,
-            satisfactory: results.filter((r) => getLetterGrade(getFinalScore(r)) === 'C').length,
-            needsImprovement: results.filter((r) => ['D', 'F'].includes(getLetterGrade(getFinalScore(r)))).length,
+            total: safeResults.length,
+            excellent: safeResults.filter((r) => getLetterGrade(getFinalScore(r)) === 'A').length,
+            good: safeResults.filter((r) => getLetterGrade(getFinalScore(r)) === 'B').length,
+            satisfactory: safeResults.filter((r) => getLetterGrade(getFinalScore(r)) === 'C').length,
+            needsImprovement: safeResults.filter((r) => ['D', 'F'].includes(getLetterGrade(getFinalScore(r)))).length,
         };
         return stats;
     };
@@ -120,7 +121,7 @@ export const SuperAdminResults: React.FC = () => {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">All Grades</option>
-                                {Array.from(new Set(results.map((r) => r.grade))).map((grade) => (
+                                {Array.from(new Set((results || []).map((r) => r.grade))).map((grade) => (
                                     <option key={grade} value={grade}>
                                         {grade}
                                     </option>
@@ -230,7 +231,7 @@ export const SuperAdminResults: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {results.map((result, index) => (
+                            {(results || []).map((result, index) => (
                                 <tr key={`${result.studentId}-${result.course}-${index}`}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {result.studentId}
