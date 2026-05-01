@@ -1,7 +1,7 @@
 const CONFIG = {
-    FIREBASE_URL: '', // Replace with your Firebase project URL, e.g. https://your-project-id.firebaseio.com
+    FIREBASE_URL: 'https://ai-studio-applet-webapp-90c5e-default-rtdb.firebaseio.com/',
     FIREBASE_AUTH: '', // Optional: Firebase auth token or database secret if required for REST access
-    SHEET_ID: 'your-google-sheet-id', // Replace with your Google Sheet ID
+    SHEET_ID: '1GQy_YUKEODUU6r-1Ana90k3idBbnGgk3_-eXxiknAzg',
     SHEETS: {
         roster: 'Roster',
         attendance: 'Attendance',
