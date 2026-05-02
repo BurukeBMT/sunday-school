@@ -95,7 +95,7 @@ export const TeacherDashboard: React.FC = () => {
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Assigned Grades</p>
                                 <p className="text-2xl font-bold text-gray-900">
-                                    {teacher.assignedGrades.length}
+                                    {teacher.assignedGrades?.length ?? 0}
                                 </p>
                             </div>
                         </div>
@@ -107,7 +107,7 @@ export const TeacherDashboard: React.FC = () => {
                             <div className="ml-4">
                                 <p className="text-sm font-medium text-gray-600">Courses</p>
                                 <p className="text-2xl font-bold text-gray-900">
-                                    {teacher.assignedCourses.length}
+                                    {teacher.assignedCourses?.length ?? 0}
                                 </p>
                             </div>
                         </div>
@@ -132,11 +132,10 @@ export const TeacherDashboard: React.FC = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id as any)}
-                                    className={`flex items-center px-1 py-2 border-b-2 font-medium text-sm ${
-                                        activeTab === tab.id
+                                    className={`flex items-center px-1 py-2 border-b-2 font-medium text-sm ${activeTab === tab.id
                                             ? 'border-blue-500 text-blue-600'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    }`}
+                                        }`}
                                 >
                                     <Icon className="h-5 w-5 mr-2" />
                                     {tab.label}
@@ -154,23 +153,23 @@ export const TeacherDashboard: React.FC = () => {
                                 <div>
                                     <h3 className="text-lg font-medium mb-3">Assigned Grades</h3>
                                     <div className="space-y-2">
-                                        {teacher.assignedGrades.map((grade) => (
+                                        {Array.isArray(teacher.assignedGrades) ? teacher.assignedGrades.map((grade) => (
                                             <div key={grade} className="flex items-center p-3 bg-gray-50 rounded-lg">
                                                 <BookOpen className="h-5 w-5 text-blue-600 mr-3" />
                                                 <span className="font-medium">{grade}</span>
                                             </div>
-                                        ))}
+                                        )) : null}
                                     </div>
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-medium mb-3">Assigned Courses</h3>
                                     <div className="space-y-2">
-                                        {courses.map((course) => (
+                                        {Array.isArray(courses) ? courses.map((course) => (
                                             <div key={course.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
                                                 <FileText className="h-5 w-5 text-green-600 mr-3" />
                                                 <span className="font-medium">{course.name}</span>
                                             </div>
-                                        ))}
+                                        )) : null}
                                     </div>
                                 </div>
                             </div>

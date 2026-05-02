@@ -94,22 +94,26 @@ export const AttendanceLogs: React.FC = () => {
     return () => unsub();
   }, [dateFilter]);
 
-  const filteredLogs = logs.filter(log => {
-    const matchesCourse = courseFilter === 'All' || log.courseId === courseFilter;
-    const matchesDept = deptFilter === 'All' || log.department === deptFilter;
-    return matchesCourse && matchesDept;
-  });
+  const filteredLogs = Array.isArray(logs)
+    ? logs.filter(log => {
+      const matchesCourse = courseFilter === 'All' || log.courseId === courseFilter;
+      const matchesDept = deptFilter === 'All' || log.department === deptFilter;
+      return matchesCourse && matchesDept;
+    })
+    : [];
 
   const exportToCSV = () => {
     const headers = ['Date', 'Time', 'Student ID', 'Student Name', 'Course', 'Department'];
-    const rows = filteredLogs.map(log => [
-      log.date,
-      log.time,
-      log.studentId,
-      students[log.studentId]?.fullName || 'Unknown',
-      courses.find(c => c.id === log.courseId)?.name || 'Unknown',
-      log.department
-    ]);
+    const rows = Array.isArray(filteredLogs)
+      ? filteredLogs.map(log => [
+        log.date || '',
+        log.time || '',
+        log.studentId || '',
+        students[log.studentId]?.fullName || 'Unknown',
+        courses.find(c => c.id === log.courseId)?.name || 'Unknown',
+        log.department || ''
+      ])
+      : [];
 
     const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -160,7 +164,7 @@ export const AttendanceLogs: React.FC = () => {
               className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 focus:bg-white outline-none appearance-none"
             >
               <option value="All">{t.allCourses}</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {Array.isArray(courses) ? courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>) : null}
             </select>
           </div>
         </div>
@@ -207,7 +211,7 @@ export const AttendanceLogs: React.FC = () => {
                     No attendance records found for this selection.
                   </td>
                 </tr>
-              ) : filteredLogs.map((log) => (
+              ) : Array.isArray(filteredLogs) ? filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-8 py-4">
                     <div className="flex items-center gap-2 text-gray-500">
@@ -232,10 +236,10 @@ export const AttendanceLogs: React.FC = () => {
                     </span>
                   </td>
                   <td className="hidden lg:table-cell px-8 py-4 text-xs text-gray-400">
-                    ID: {log.adminId.substring(0, 8)}...
+                    ID: {log.adminId ? `${log.adminId.substring(0, 8)}...` : 'N/A'}
                   </td>
                 </tr>
-              ))}
+              )) : null}
             </tbody>
           </table>
         </div>

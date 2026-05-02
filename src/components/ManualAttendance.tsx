@@ -249,11 +249,11 @@ export const ManualAttendance: React.FC = () => {
                                 onChange={e => setSelectedCourse(e.target.value)}
                                 className="w-full px-4 py-4 rounded-2xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-olive-500 outline-none transition-all appearance-none pr-10"
                             >
-                                {courses.map(course => (
+                                {Array.isArray(courses) ? courses.map(course => (
                                     <option key={course.id} value={course.id}>
                                         {course.name} ({(course.departments || [course.department]).join(', ')})
                                     </option>
-                                ))}
+                                )) : null}
                             </select>
                             <BookOpen className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         </div>
@@ -316,7 +316,7 @@ export const ManualAttendance: React.FC = () => {
                         </div>
                     ) : (
                         <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {filteredStudents.map(student => (
+                            {Array.isArray(filteredStudents) ? filteredStudents.map(student => (
                                 <motion.div
                                     key={student.id}
                                     initial={{ opacity: 0, y: 10 }}
@@ -345,7 +345,7 @@ export const ManualAttendance: React.FC = () => {
                                         </button>
                                     </div>
                                 </motion.div>
-                            ))}
+                            )) : null}
                         </div>
                     )}
                 </div>

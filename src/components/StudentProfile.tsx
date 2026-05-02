@@ -193,8 +193,12 @@ export const StudentProfile: React.FC = () => {
         );
     }
 
-    const totalAverage = transcriptData?.totalAverage || 0;
+    const totalAverage = transcriptData?.totalAverage ?? 0;
+    const courseCount = Array.isArray(transcriptData?.courses) ? transcriptData.courses.length : 0;
+    const bestScore = courseCount > 0 ? Math.max(...transcriptData!.courses.map(c => c.score)) : 0;
+    const coursePerformance = Array.isArray(transcriptData?.courses) ? transcriptData.courses.slice(0, 5) : [];
     const performance = getPerformanceStatus(totalAverage);
+    const PerformanceIcon = performance.icon;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -241,7 +245,7 @@ export const StudentProfile: React.FC = () => {
                         <div className="px-6 py-4 bg-gray-50 border-b">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center">
-                                    <performance.icon className={`h-5 w-5 mr-2 ${performance.color.split(' ')[0]}`} />
+                                    <PerformanceIcon className={`h-5 w-5 mr-2 ${performance.color.split(' ')[0]}`} />
                                     <span className="text-sm font-medium text-gray-700">Performance Status:</span>
                                 </div>
                                 <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${performance.color}`}>
@@ -283,29 +287,28 @@ export const StudentProfile: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="text-center p-4 bg-purple-50 rounded-lg">
                                             <div className="text-2xl font-bold text-purple-600">
-                                                {transcriptData?.courses.length || 0}
+                                                {courseCount}
                                             </div>
                                             <div className="text-sm text-gray-600">Courses</div>
                                         </div>
                                         <div className="text-center p-4 bg-orange-50 rounded-lg">
                                             <div className="text-2xl font-bold text-orange-600">
-                                                {transcriptData?.courses.length ?
-                                                    Math.max(...transcriptData.courses.map(c => c.score)).toFixed(1) : '0'}%
+                                                {courseCount > 0 ? bestScore.toFixed(1) : '0'}%
                                             </div>
                                             <div className="text-sm text-gray-600">Best Score</div>
                                         </div>
                                     </div>
 
-                                    {transcriptData && transcriptData.courses.length > 0 && (
+                                    {courseCount > 0 && (
                                         <div className="mt-6">
                                             <h4 className="text-sm font-medium text-gray-700 mb-3">Course Performance</h4>
                                             <div className="space-y-2">
-                                                {transcriptData.courses.slice(0, 5).map((course, index) => (
+                                                {coursePerformance.map((course, index) => (
                                                     <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
-                                                        <span className="text-sm text-gray-600">{course.courseName}</span>
+                                                        <span className="text-sm text-gray-600">{course.courseName || ''}</span>
                                                         <div className="flex items-center space-x-2">
-                                                            <span className="text-sm font-medium">{course.score.toFixed(1)}%</span>
-                                                            <span className="text-xs text-gray-500">#{course.rank}</span>
+                                                            <span className="text-sm font-medium">{course.score?.toFixed(1) ?? '0'}%</span>
+                                                            <span className="text-xs text-gray-500">#{course.rank ?? 'N/A'}</span>
                                                         </div>
                                                     </div>
                                                 ))}

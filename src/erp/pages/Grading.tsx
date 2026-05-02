@@ -180,9 +180,9 @@ export const Grading: React.FC = () => {
             sortable: true,
             render: (value: number) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value >= 90 ? 'bg-green-100 text-green-800' :
-                        value >= 80 ? 'bg-yellow-100 text-yellow-800' :
-                            value >= 70 ? 'bg-orange-100 text-orange-800' :
-                                'bg-red-100 text-red-800'
+                    value >= 80 ? 'bg-yellow-100 text-yellow-800' :
+                        value >= 70 ? 'bg-orange-100 text-orange-800' :
+                            'bg-red-100 text-red-800'
                     }`}>
                     {value}%
                 </span>
@@ -194,9 +194,9 @@ export const Grading: React.FC = () => {
             sortable: true,
             render: (value: string) => (
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${value === 'A' ? 'bg-green-100 text-green-800' :
-                        value === 'B+' || value === 'B' ? 'bg-blue-100 text-blue-800' :
-                            value === 'C+' || value === 'C' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
+                    value === 'B+' || value === 'B' ? 'bg-blue-100 text-blue-800' :
+                        value === 'C+' || value === 'C' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
                     }`}>
                     {value}
                 </span>
@@ -223,11 +223,11 @@ export const Grading: React.FC = () => {
     // Calculate stats from current records
     const stats: GradingStats = {
         totalStudents: 120, // Mock total
-        averageGrade: Math.round(gradeRecords.reduce((acc, record) => acc + record.percentage, 0) / gradeRecords.length),
-        highestGrade: Math.max(...gradeRecords.map(r => r.percentage)),
-        lowestGrade: Math.min(...gradeRecords.map(r => r.percentage)),
-        passRate: Math.round((gradeRecords.filter(r => r.percentage >= 60).length / gradeRecords.length) * 100),
-        excellentRate: Math.round((gradeRecords.filter(r => r.percentage >= 90).length / gradeRecords.length) * 100)
+        averageGrade: gradeRecords.length > 0 ? Math.round(gradeRecords.reduce((acc, record) => acc + record.percentage, 0) / gradeRecords.length) : 0,
+        highestGrade: gradeRecords.length > 0 ? Math.max(...gradeRecords.map(r => r.percentage)) : 0,
+        lowestGrade: gradeRecords.length > 0 ? Math.min(...gradeRecords.map(r => r.percentage)) : 0,
+        passRate: gradeRecords.length > 0 ? Math.round((gradeRecords.filter(r => r.percentage >= 60).length / gradeRecords.length) * 100) : 0,
+        excellentRate: gradeRecords.length > 0 ? Math.round((gradeRecords.filter(r => r.percentage >= 90).length / gradeRecords.length) * 100) : 0
     };
 
     return (

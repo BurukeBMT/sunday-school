@@ -128,11 +128,11 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="">Choose a course...</option>
-                            {assignedCourses.map(course => (
+                            {Array.isArray(assignedCourses) ? assignedCourses.map(course => (
                                 <option key={course.id} value={course.id}>
                                     {course.name} (Grade {course.grade})
                                 </option>
-                            ))}
+                            )) : null}
                         </select>
                     </div>
 
@@ -209,10 +209,10 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {students.map((student) => (
+                                {Array.isArray(students) ? students.map((student) => (
                                     <tr key={student.id}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {student.firstName} {student.lastName}
+                                            {student.fullName || `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown Student'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {student.id}
@@ -223,7 +223,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
                                                     type="number"
                                                     min="0"
                                                     max="100"
-                                                    value={marks[student.id]?.[selectedAssessmentType] || ''}
+                                                    value={marks[student.id]?.[selectedAssessmentType] ?? ''}
                                                     onChange={(e) => updateMark(student.id, selectedAssessmentType, parseFloat(e.target.value) || 0)}
                                                     className="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     placeholder="0"
@@ -231,7 +231,7 @@ export const MarksEntry: React.FC<MarksEntryProps> = ({ assignedCourses, assigne
                                             </td>
                                         )}
                                     </tr>
-                                ))}
+                                )) : null}
                             </tbody>
                         </table>
                     </div>

@@ -79,10 +79,12 @@ export const StudentResults: React.FC = () => {
     }, []);
 
     // Calculate statistics
-    const totalCourses = results.length;
-    const averageScore = totalCourses > 0 ? results.reduce((sum, result) => sum + result.total, 0) / totalCourses : 0;
-    const highestScore = totalCourses > 0 ? Math.max(...results.map(r => r.total)) : 0;
-    const lowestScore = totalCourses > 0 ? Math.min(...results.map(r => r.total)) : 0;
+    const safeResults = Array.isArray(results) ? results : [];
+    const totalCourses = safeResults.length;
+    const averageScore = totalCourses > 0 ? safeResults.reduce((sum, result) => sum + (result.total ?? 0), 0) / totalCourses : 0;
+    const highestScore = totalCourses > 0 ? Math.max(...safeResults.map(r => r.total ?? 0)) : 0;
+    const lowestScore = totalCourses > 0 ? Math.min(...safeResults.map(r => r.total ?? 0)) : 0;
+    const bestRank = totalCourses > 0 ? Math.min(...safeResults.map(r => r.rank ?? 0)) : null;
 
     if (loading) {
         return (
@@ -217,7 +219,7 @@ export const StudentResults: React.FC = () => {
                         <div className="ml-4">
                             <p className="text-sm font-medium text-gray-600">Best Rank</p>
                             <p className="text-2xl font-bold text-gray-900">
-                                #{Math.min(...results.map(r => r.rank))}
+                                #{bestRank ?? 'N/A'}
                             </p>
                         </div>
                     </div>
@@ -248,7 +250,7 @@ export const StudentResults: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {results.map((result) => {
+                            {Array.isArray(safeResults) ? safeResults.map((result) => {
                                 const getPerformanceColor = (score: number) => {
                                     if (score >= 90) return 'text-green-600 bg-green-100';
                                     if (score >= 80) return 'text-blue-600 bg-blue-100';
@@ -283,7 +285,7 @@ export const StudentResults: React.FC = () => {
                                         </td>
                                     </tr>
                                 );
-                            })}
+                            }) : null}
                         </tbody>
                     </table>
                 </div>
@@ -317,7 +319,7 @@ export const StudentResults: React.FC = () => {
                             <div className="flex justify-between">
                                 <span className="text-sm text-gray-600">Best Rank:</span>
                                 <span className="text-sm font-medium">
-                                    #{Math.min(...results.map(r => r.rank))}
+                                    #{bestRank ?? 'N/A'}
                                 </span>
                             </div>
                             <div className="flex justify-between">

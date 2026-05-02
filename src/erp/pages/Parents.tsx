@@ -342,7 +342,7 @@ export const Parents: React.FC = () => {
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Children</h3>
                                     <div className="space-y-3">
-                                        {selectedParent.children.map((child, index) => (
+                                        {selectedParent.children?.map((child, index) => (
                                             <div key={index} className="bg-gray-50 p-4 rounded-lg">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <h4 className="font-medium text-gray-900">{child.name}</h4>
@@ -354,8 +354,8 @@ export const Parents: React.FC = () => {
                                                     <div>
                                                         <span className="text-gray-600">Attendance:</span>
                                                         <span className={`ml-2 font-medium ${child.attendanceRate >= 90 ? 'text-green-600' :
-                                                                child.attendanceRate >= 80 ? 'text-yellow-600' :
-                                                                    'text-red-600'
+                                                            child.attendanceRate >= 80 ? 'text-yellow-600' :
+                                                                'text-red-600'
                                                             }`}>
                                                             {child.attendanceRate}%
                                                         </span>
@@ -363,8 +363,8 @@ export const Parents: React.FC = () => {
                                                     <div>
                                                         <span className="text-gray-600">Avg Grade:</span>
                                                         <span className={`ml-2 font-medium ${child.averageGrade >= 85 ? 'text-green-600' :
-                                                                child.averageGrade >= 75 ? 'text-yellow-600' :
-                                                                    'text-red-600'
+                                                            child.averageGrade >= 75 ? 'text-yellow-600' :
+                                                                'text-red-600'
                                                             }`}>
                                                             {child.averageGrade}%
                                                         </span>
