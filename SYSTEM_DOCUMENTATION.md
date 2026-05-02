@@ -5,7 +5,7 @@
 
 **Version:** 4.0.0
 **Last Updated:** December 2024
-**Technology:** React 19, TypeScript, Firebase, Google Sheets, PWA, ERP Dashboard, Production Features
+**Technology:** React 19, TypeScript, Firebase, PWA, ERP Dashboard, Production Features
 
 ---
 
@@ -39,7 +39,7 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - **📱 Mobile-First PWA**: Installable on smartphones and tablets with offline support
 - **🔐 Multi-Role Authentication**: Superadmin, Admin, Teacher, Student, Parent roles with granular permissions
 - **📊 Real-Time Analytics**: Live attendance monitoring with comprehensive dashboards
-- **📚 Academic Management**: Google Sheets integration for grading, results, and transcripts
+- **📚 Academic Management**: grading, results, and transcript management
 - **🌍 Ethiopian Integration**: Amharic language and calendar support
 - **📷 QR Code System**: Secure attendance marking with duplicate prevention
 - **🏢 Professional ERP Dashboard**: Complete admin interface with advanced analytics, modular components, and comprehensive reporting
@@ -65,7 +65,7 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - **Firebase Authentication** - Secure user authentication
 - **Firebase Realtime Database** - Real-time data synchronization
 - **Firebase Hosting** - Global CDN hosting
-- **Google Sheets API** - Academic results and grading data
+- **Academic results services** - grading and results data
 
 ### Progressive Web App (PWA)
 - **Vite PWA Plugin** - Service worker and PWA features
@@ -113,7 +113,7 @@ The **ፍሬ ሃይማኖት ሰ/ት/ቤት** (Fre Haymanot Sunday School) Atten
 - **Department Filtering**: Organized by departments
 
 ### 5. 📈 Academic Assessment System
-- **Google Sheets Integration**: External grading data management
+- **Academic assessment system**: External grading and results management
 - **Grading Rules**: Configurable assessment weights
 - **Results Publishing**: Controlled results release
 - **Transcript Generation**: PDF transcripts with rankings
@@ -561,7 +561,7 @@ firebase-database/
         └── publishedAt?: number
 ```
 
-### Google Sheets Integration
+### Academic Grading Services
 - **Grading Rules**: Assessment type weights and configurations
 - **Student Marks**: Individual assessment scores
 - **Results Data**: Calculated grades and rankings
@@ -909,7 +909,7 @@ const DEPARTMENTS = [
 - CRUD operations (`ref`, `get`, `set`, `push`)
 - Query operations (`query`, `orderByChild`, `equalTo`)
 
-### Google Sheets Integration (`sheetsApi.ts`)
+### Academic Grading Services
 
 #### Available Operations:
 - `fetchResults()` - Get all student results
@@ -984,7 +984,7 @@ const DEPARTMENTS = [
 - **Node.js** v18+
 - **npm** or **yarn**
 - **Firebase Project** with enabled services
-- **Google Sheets API** (for grading system)
+- **Academic grading service** (for grading system)
 
 ### Firebase Setup
 
@@ -1113,7 +1113,7 @@ firebase deploy --only database
 
 ### Academic Assessment System
 
-#### Google Sheets Integration:
+#### Academic Assessment Integration:
 - External grading data management
 - Configurable assessment weights
 - Automated result calculations
@@ -1195,11 +1195,11 @@ Firebase Realtime DB → onValue() Listeners → State Updates → UI Re-render
 
 ## 📚 Academic Assessment System
 
-### Google Sheets Integration
+### Grading and Results
 
 #### Data Flow
 ```
-Google Sheets → Apps Script → Firebase → React Components
+Firebase → React Components
 ```
 
 #### Grading Rules Configuration
@@ -1225,7 +1225,7 @@ Google Sheets → Apps Script → Firebase → React Components
 
 #### Data Sources
 - **Student Information**: Firebase student records
-- **Academic Results**: Google Sheets calculations
+- **Academic Results**: Firebase grading calculations
 - **Course Details**: Firebase course configurations
 - **Ranking Data**: Computed grade rankings
 
@@ -1261,7 +1261,7 @@ Google Sheets → Apps Script → Firebase → React Components
 
 #### Academic System Issues
 - **Issue**: Results not loading
-- **Solution**: Check Google Sheets API connectivity
+- **Solution**: Check grading service connectivity
 - **Issue**: PDF generation fails
 - **Solution**: Check browser PDF permissions
 

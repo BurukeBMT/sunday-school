@@ -355,7 +355,7 @@ export const SuperAdminDashboard: React.FC = () => {
                             <span className="text-green-600 font-medium">Active</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">Google Sheets API</span>
+                            <span className="text-gray-600">Academic grading service</span>
                             <span className="text-green-600 font-medium">Connected</span>
                         </div>
                     </div>

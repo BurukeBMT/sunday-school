@@ -45,7 +45,7 @@ interface GradingStats {
     excellentRate: number;
 }
 
-// Mock data - replace with real Google Sheets/Firebase data
+// Mock data - replace with real Firebase data
 const mockGradeRecords: GradeRecord[] = [
     {
         id: 'GRD001',
@@ -131,7 +131,7 @@ export const Grading: React.FC = () => {
     const [selectedGrade, setSelectedGrade] = useState<string>('all');
 
     useEffect(() => {
-        // TODO: Fetch real data from Google Sheets/Firebase based on filters
+        // TODO: Fetch real data from Firebase based on filters
         setTimeout(() => {
             setGradeRecords(mockGradeRecords);
             setLoading(false);

@@ -122,7 +122,7 @@ export interface LiveAttendanceEntry {
   timestamp: number;
 }
 
-// Grading System Types (Google Sheets Integration)
+// Grading System Types
 export interface GradingRule {
   course: string;
   type: string; // 'assignment', 'quiz', 'mid', 'final', etc.

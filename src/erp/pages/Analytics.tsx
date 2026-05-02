@@ -109,7 +109,7 @@ export const Analytics: React.FC = () => {
     const [selectedTimeframe, setSelectedTimeframe] = useState<string>('6months');
 
     useEffect(() => {
-        // TODO: Fetch real analytics data from Firebase/Google Sheets
+        // TODO: Fetch real analytics data from Firebase
         setTimeout(() => {
             setAnalyticsData(mockAnalyticsData);
             setLoading(false);
@@ -345,8 +345,8 @@ export const Analytics: React.FC = () => {
                         sortable: true,
                         render: (value: number) => (
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value >= 90 ? 'bg-green-100 text-green-800' :
-                                    value >= 80 ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-red-100 text-red-800'
+                                value >= 80 ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
                                 }`}>
                                 {value}%
                             </span>
@@ -358,8 +358,8 @@ export const Analytics: React.FC = () => {
                         sortable: true,
                         render: (value: number) => (
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${value >= 85 ? 'bg-green-100 text-green-800' :
-                                    value >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-red-100 text-red-800'
+                                value >= 75 ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
                                 }`}>
                                 {value}%
                             </span>

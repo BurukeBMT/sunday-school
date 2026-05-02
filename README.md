@@ -11,7 +11,7 @@ A modern, mobile-first Progressive Web App (PWA) for managing Sunday School atte
 - **Ethiopian Calendar Integration**: Native Ethiopian date display and conversion
 - **Mobile-Optimized UI**: Beautiful responsive design for mobile devices
 - **QR Code Attendance System**: Secure attendance marking with duplicate prevention
-- **Academic Assessment System**: Google Sheets integration for grading, results, and transcripts
+- **Academic Assessment System**: grading, results, and transcript management
 - **🏢 Professional ERP Dashboard**: Complete admin interface with advanced analytics, student/teacher/parent management, and comprehensive reporting
 
 ### Advanced Features
@@ -171,11 +171,6 @@ Access the professional ERP dashboard at `/erp` (Superadmin, Admin roles):
 
 ## 📚 Academic Assessment System
 
-### Google Sheets Integration
-- External grading data management
-- Configurable assessment weights (assignments, quizzes, exams)
-- Automated result calculations and rankings
-
 ### Features
 - **Grading Rules**: Configure assessment types and weights
 - **Results Publishing**: Controlled release of academic results
@@ -233,7 +228,7 @@ ERP Dashboard Structure:
 src/
 ├── components/      # React components (40+ components)
 ├── contexts/        # AuthContext, LanguageContext
-├── lib/            # Utilities: analytics, sheetsApi, qrUtils, etc.
+├── lib/            # Utilities: analytics, qrUtils, etc.
 ├── routes/         # AppRoutes, ProtectedRoute, RoleRoutes
 ├── pages/          # Page components
 ├── erp/            # ERP Dashboard System
